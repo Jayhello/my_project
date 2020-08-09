@@ -33,6 +33,7 @@ struct util {
     static int64_t atoi(const char *b, const char *e) { return strtol(b, (char **) &e, 10); }
     static int64_t atoi(const char *b) { return atoi(b, b + strlen(b)); }
     static uint64_t gettid();
+    static int GetRandomRange(int min, int max);
 };
 
 struct ExitCaller : private noncopyable {

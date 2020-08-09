@@ -8,6 +8,7 @@
 #include <chrono>
 #include <memory>
 #include <pthread.h>
+#include <random>
 
 namespace comm{
 namespace util{
@@ -70,6 +71,14 @@ uint64_t util::gettid() {
     uint64_t uid = 0;
     memcpy(&uid, &tid, std::min(sizeof(tid), sizeof(uid)));
     return uid;
+}
+
+int util::GetRandomRange(int min, int max){
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> distr(min, max);
+
+    return distr(gen);
 }
 
 } // util

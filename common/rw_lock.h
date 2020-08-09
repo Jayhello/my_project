@@ -36,7 +36,7 @@ RWLock::RWLock():read_num_(0), is_write_(false){}
 void RWLock::lockR(){
     std::unique_lock<std::mutex> lock(mtx_);
 
-    r_ready_.wait(lock, []{
+    r_ready_.wait(lock, [&]{
        return !is_write_;
     });
 
@@ -55,7 +55,7 @@ void RWLock::unlockR(){
 void RWLock::lockW(){
     std::unique_lock<std::mutex> lock(mtx_);
 
-    w_ready_.wait(lock, []{
+    w_ready_.wait(lock, [&]{
         return !is_write_ and 0 == read_num_;
     });
 
@@ -67,7 +67,7 @@ void RWLock::unlockW(){
     is_write_ = false;
 
     w_ready_.notify_one();
-    w_ready_.notify_all();
+    r_ready_.notify_all();
 }
 
 } // rw_lock
