@@ -1,6 +1,12 @@
 #include <iostream>
+#include "common/logging.h"
+
+using namespace comm::log;
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
+    Logger::getLogger().setLogLevel(Logger::LINFO);
+
+    info("hello world");
+
     return 0;
 }
