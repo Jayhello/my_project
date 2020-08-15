@@ -4,7 +4,7 @@
 #include <sstream>
 #include <boost/algorithm/string.hpp>
 
-std::string yaml_path = "/mnt/e/c_code/cmake_tutorial1-master/demo_protobuf/test_yaml.yaml";
+std::string yaml_path = "/home/xy/c_code/my_project/demo/demo_common/test_yaml.yaml";
 using std::cout;
 using std::endl;
 
@@ -55,4 +55,10 @@ void test_yaml(){
     uint32_t id;
     GetValue(id, "msg_info", "id");
     printf("\n id: %u \n", id); // members: xy1->xy2
+}
+
+int main(int argc, char* argv[]){
+    test_yaml();
+
+    return 0;
 }
