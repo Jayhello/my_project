@@ -35,6 +35,7 @@ struct Ip4Addr{
     std::string ip() const;
     short port() const;
     unsigned int ipInt() const;
+    
     // if you pass a hostname to constructor, then use this to check error
     bool isIpValid() const;
     struct sockaddr_in &getAddr() {
