@@ -8,12 +8,8 @@
 #include <string>
 #include "util.h"
 
-namespace comm{
-namespace log{
-
-
 #ifdef NDEBUG
-        #define hlog(level, ...)                                                                \
+#define hlog(level, ...)                                                                \
     do {                                                                                \
         if (level <= Logger::getLogger().getLogLevel()) {                               \
             Logger::getLogger().logv(level, __FILE__, __LINE__, __func__, __VA_ARGS__); \
@@ -58,6 +54,9 @@ namespace log{
 
 #define setloglevel(l) Logger::getLogger().setLogLevel(l)
 #define setlogfile(n) Logger::getLogger().setFileName(n)
+
+namespace comm{
+namespace log{
 
 using namespace comm::util;
 
