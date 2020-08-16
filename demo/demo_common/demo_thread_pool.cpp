@@ -25,9 +25,7 @@ int fake_download(const std::string& url){
     info("done");
 }
 
-int main() {
-    Logger::getLogger().setLogLevel(Logger::LINFO);
-
+void test_ThreadPool1(){
     thread_pool::ThreadPool1 tp(3);
 
     uint32_t id = 1101;
@@ -36,6 +34,26 @@ int main() {
 
     std::string url = "www.qq.com";
     tp.emplace(fake_download, url);
+}
+
+void test_ThreadPool(){
+    thread_pool::ThreadPool tp(3);
+
+    uint32_t id = 1101;
+    std::string name;
+    tp.addTask(std::bind(fake_get_db, id, name));
+
+    std::string url = "www.qq.com";
+    tp.addTask(std::bind(fake_download, url));
+
+//    std::chrono::seconds sec(4);
+//    std::this_thread::sleep_for(sec);
+}
+
+int main() {
+    Logger::getLogger().setLogLevel(Logger::LINFO);
+
+    test_ThreadPool();
 
     info("add done");
     return 0;

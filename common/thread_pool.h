@@ -92,6 +92,8 @@ class SafeQueue: private comm::util::noncopyable{
 public:
     static const int WAIT_INFINITE = std::numeric_limits<int>::max();
 
+    SafeQueue():exit_(false){}
+
     bool push(const T& val);
 
     T pop_wait(int waitMs = WAIT_INFINITE);
@@ -166,6 +168,8 @@ bool SafeQueue<T>::push(const T& val){
 
     queue_.push_back(val);
     ready_.notify_one();
+
+    return true;
 }
 
 template<typename T>
