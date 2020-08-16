@@ -48,6 +48,8 @@ int setNoDelay(int fd, bool value) {
 }
 
 using std::string;
+using namespace comm::log;
+
 Ip4Addr::Ip4Addr(const string &host, short port) {
     memset(&addr_, 0, sizeof addr_);
     addr_.sin_family = AF_INET;

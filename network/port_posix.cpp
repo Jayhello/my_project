@@ -12,6 +12,10 @@
 namespace network{
 namespace port{
 
+#ifndef OS_LINUX
+#define OS_LINUX 1
+#endif
+
 #ifdef OS_LINUX
         struct in_addr getHostByName(const std::string &host) {
     struct in_addr addr;
@@ -48,7 +52,7 @@ uint64_t gettid() {
     memcpy(&uid, &tid, std::min(sizeof(tid), sizeof(uid)));
     return uid;
 }
-#endif    
-    
+#endif
+
 }
 }

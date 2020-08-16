@@ -9,3 +9,7 @@ file(GLOB NETWORK_SRCS ./*.cpp ./*.h)
 
 add_library(network_lib
         ${NETWORK_SRCS})
+
+target_link_libraries(network_lib
+        common_lib
+        )
