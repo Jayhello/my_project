@@ -36,18 +36,17 @@ namespace log{
 #define warn(...) hlog(Logger::LWARN, __VA_ARGS__)
 #define error(...) hlog(Logger::LERROR, __VA_ARGS__)
 #define fatal(...) hlog(Logger::LFATAL, __VA_ARGS__)
+
+#ifndef fatalif
 #define fatalif(b, ...)                        \
     do {                                       \
         if ((b)) {                             \
             hlog(Logger::LFATAL, __VA_ARGS__); \
         }                                      \
     } while (0)
-#define check(b, ...)                          \
-    do {                                       \
-        if ((b)) {                             \
-            hlog(Logger::LFATAL, __VA_ARGS__); \
-        }                                      \
-    } while (0)
+#endif
+
+#ifndef exitif
 #define exitif(b, ...)                         \
     do {                                       \
         if ((b)) {                             \
@@ -55,6 +54,7 @@ namespace log{
             _exit(1);                          \
         }                                      \
     } while (0)
+#endif
 
 #define setloglevel(l) Logger::getLogger().setLogLevel(l)
 #define setlogfile(n) Logger::getLogger().setFileName(n)

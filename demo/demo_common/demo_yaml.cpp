@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <sstream>
 #include <boost/algorithm/string.hpp>
+#include <mutex>
+#include "common/logging.h"
+#include <boost/thread.hpp>
+#include <queue>
 
 std::string yaml_path = "/home/xy/c_code/my_project/demo/demo_common/test_yaml.yaml";
 using std::cout;
@@ -57,8 +61,12 @@ void test_yaml(){
     printf("\n id: %u \n", id); // members: xy1->xy2
 }
 
+
 int main(int argc, char* argv[]){
     test_yaml();
+
+    std::queue<int> que;
+    que.push(2);
 
     return 0;
 }

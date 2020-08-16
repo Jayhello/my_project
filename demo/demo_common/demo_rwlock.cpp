@@ -7,7 +7,7 @@
 #include "common/util.h"
 #include "common/logging.h"
 
-//#include <boost/thread.hpp>
+#include <boost/thread.hpp>
 #include <boost/scope_exit.hpp>
 
 using namespace comm;
@@ -40,13 +40,13 @@ public:
     int Delt(const std::string& delt_op, int val);
 
 private:
-//    typedef boost::shared_mutex RWMutex;
-//    typedef boost::unique_lock<RWMutex> WLock;
-//    typedef boost::shared_lock<RWMutex> RLock;
+    typedef boost::shared_mutex RWMutex;
+    typedef boost::unique_lock<RWMutex> WLock;
+    typedef boost::shared_lock<RWMutex> RLock;
 
-    typedef std::mutex RWMutex;
-    typedef std::unique_lock<RWMutex> WLock;
-    typedef std::unique_lock<RWMutex> RLock;
+//    typedef std::mutex RWMutex;
+//    typedef std::unique_lock<RWMutex> WLock;
+//    typedef std::unique_lock<RWMutex> RLock;
 
     RWMutex mtx_;
     int count_;
