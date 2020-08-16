@@ -8,6 +8,8 @@ include_directories(./)
 
 add_subdirectory(common)
 
+add_subdirectory(network)
+
 add_subdirectory(demo/demo_common)
 
 set(SOURCE_FILES main.cpp)
