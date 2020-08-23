@@ -76,7 +76,7 @@ int Socket::Listen(int backlog = SOMAXCONN){
 }
 
 int Socket::Accept(address::Ip4Addr* p_addr){
-
+    int ret = 0;
 }
 
 int Socket::Close(){
