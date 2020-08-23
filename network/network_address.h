@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <string>
 #include "port_posix.h"
+#include <variant>
 
 namespace network{
 namespace address{
@@ -21,10 +22,6 @@ template <class T>
 static T ntoh(T v) {
     return port::htobe(v);
 }
-int setNonBlock(int fd, bool value = true);
-int setReuseAddr(int fd, bool value = true);
-int setReusePort(int fd, bool value = true);
-int setNoDelay(int fd, bool value = true);
 
 struct Ip4Addr{
     Ip4Addr(const std::string &host, short port);
@@ -38,17 +35,21 @@ struct Ip4Addr{
     
     // if you pass a hostname to constructor, then use this to check error
     bool isIpValid() const;
-    struct sockaddr_in &getAddr() {
-        return addr_;
+
+    const struct sockaddr_in* getAddr()const {
+        return &addr_;
     }
+
     static std::string hostToIp(const std::string &host) {
         Ip4Addr addr(host, 0);
         return addr.ip();
-    }    
-    
+    }
+
+    socklen_t socklen()const;
+
 private:
     struct sockaddr_in addr_;    
 };
-    
+
 } // address
 } // network
