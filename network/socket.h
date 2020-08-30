@@ -25,10 +25,14 @@ public:
 
 //    explicit Socket(int fd, int domain = AF_INET);
     Socket(int fd, int domain = AF_INET);
+    Socket():fd_(-1), domain_(AF_INET){}
 
 //    explicit Socket(const Socket&);
 //
-//    Socket& operator=(const Socket&);
+    Socket& operator=(const Socket& other){
+        fd_ = other.fd_;
+        domain_ = other.domain_;
+    }
 //
 //    explicit Socket(Socket &&);
 
@@ -36,6 +40,12 @@ public:
         int domain = AF_INET;
         int fd = ::socket(domain, SOCK_STREAM, IPPROTO_TCP);
         return Socket(fd, domain);
+    }
+
+    static Socket CreateTcpFd(){
+        int domain = AF_INET;
+        int fd = ::socket(domain, SOCK_STREAM, IPPROTO_TCP);
+        return fd;
     }
 
     static Socket CreateUdpSocket(){
@@ -60,6 +70,8 @@ public:
     int Listen(int backlog = SOMAXCONN);
 
     int Accept(address::Ip4Addr* p_addr);
+
+    int IsClose()const{return fd_ < 0;}
 
     int Close();
 

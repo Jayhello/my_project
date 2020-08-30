@@ -24,10 +24,11 @@ int main() {
     return 0;
 }
 
-void encode_msg(std::string& msg){
+void encode_msg(int id, std::string& msg){
     common::Info info;
-    info.set_id(1);
-    info.set_name("xy");
+    info.set_id(id);
+    std::string name = "xy" + std::to_string(id);
+    info.set_name(name);
 
     info.SerializeToString(&msg);
 }
@@ -36,7 +37,7 @@ void decode_msg(const std::string& msg, common::Info& info){
     info.ParseFromString(msg);
 }
 
-void test_client(){
+void test_single_client(int id){
     int ret = 0;
     Socket sock_cli = Socket::CreateTcpSocket();
 
@@ -47,7 +48,7 @@ void test_client(){
     sock_cli.Connect(addr);
 
     std::string buf;
-    encode_msg(buf);
+    encode_msg(id, buf);
     int send_len = sock_cli.Send(buf.c_str(), buf.size());
     info("send: %s, len: %d, fd: %d", buf.c_str(), send_len, sock_cli.GetFd());
 
@@ -62,4 +63,17 @@ void test_client(){
     sock_cli.Close();
 
     info("cli close");
+}
+
+void test_client(){
+    thread_pool::ThreadPool tp(10);
+
+    for(int i = 0; i < 10; ++i){
+        tp.addTask([i]{
+            test_single_client(i);
+        });
+    }
+
+    std::chrono::seconds sec(100);
+    std::this_thread::sleep_for(sec);
 }

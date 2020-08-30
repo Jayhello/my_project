@@ -7,7 +7,9 @@
 #include <netinet/tcp.h>
 #include <assert.h>
 #include <unistd.h>
+#include "common/logging.h"
 
+using namespace comm::log;
 namespace network{
 namespace socket{
 
@@ -78,6 +80,9 @@ int Socket::GetSocketOpt(int opt, void* val, socklen_t* opt_len, int level){
 
 int Socket::Bind(const address::Ip4Addr& addr){
     int ret = ::bind(fd_, addr.getAddr(), addr.socklen());
+    if(ret){
+        error("bind err: %d, addr: %s, fd: %d", errno, addr.toString().c_str(), fd_);
+    }
     assert(0 == ret);
 }
 

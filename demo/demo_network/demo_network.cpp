@@ -35,7 +35,9 @@ void test_address(){
 
 void test_Socket_Svr(){
     int ret = 0;
-    Socket sock_svr = Socket::CreateTcpSocket();
+    Socket sock_svr(Socket::CreateTcpSocket());
+//    sock_svr = Socket::CreateTcpSocket();
+//    sock_svr = Socket::CreateTcpFd();
 
     std::string ip = "127.0.0.1";
     uint16_t port = 8888;

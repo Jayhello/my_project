@@ -29,3 +29,11 @@ target_link_libraries(demo_client
         proto_lib
         ${PROTOBUF_LIBRARIES}
         )
+
+add_executable(demo_service demo_service.cpp)
+target_link_libraries(demo_service
+        common_lib
+        network_lib
+        proto_lib
+        ${PROTOBUF_LIBRARIES}
+        )
