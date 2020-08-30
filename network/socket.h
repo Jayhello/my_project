@@ -14,9 +14,35 @@ int setReuseAddr(int fd, bool value = true);
 int setReusePort(int fd, bool value = true);
 int setNoDelay(int fd, bool value = true);
 
-class Socket:comm::util::noncopyable{
+// if noncopyable and explicit then construct will be a problem
+//class Socket:comm::util::noncopyable{
+class Socket{
 public:
-    explicit Socket(int fd, int domain);
+    enum enSocketType{
+        TCP = 1,
+        UDP = 2,
+    };
+
+//    explicit Socket(int fd, int domain = AF_INET);
+    Socket(int fd, int domain = AF_INET);
+
+//    explicit Socket(const Socket&);
+//
+//    Socket& operator=(const Socket&);
+//
+//    explicit Socket(Socket &&);
+
+    static Socket CreateTcpSocket(){
+        int domain = AF_INET;
+        int fd = ::socket(domain, SOCK_STREAM, IPPROTO_TCP);
+        return Socket(fd, domain);
+    }
+
+    static Socket CreateUdpSocket(){
+        int domain = AF_INET;
+        int fd = ::socket(domain, SOCK_DGRAM, IPPROTO_UDP);
+        return Socket(fd, domain);
+    }
 
     ~Socket();
 

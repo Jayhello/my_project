@@ -28,6 +28,9 @@ struct Ip4Addr{
     Ip4Addr(short port = 0) : Ip4Addr("", port) {}
     Ip4Addr(const struct sockaddr_in &addr) : addr_(addr){};
 
+    Ip4Addr(const struct sockaddr* addr) :
+            addr_(*reinterpret_cast<const sockaddr_in *>(addr)){};
+
     std::string toString() const;
     std::string ip() const;
     short port() const;
@@ -36,8 +39,8 @@ struct Ip4Addr{
     // if you pass a hostname to constructor, then use this to check error
     bool isIpValid() const;
 
-    const struct sockaddr_in* getAddr()const {
-        return &addr_;
+    const struct sockaddr* getAddr()const {
+        return reinterpret_cast<const struct sockaddr *>(&addr_);
     }
 
     static std::string hostToIp(const std::string &host) {

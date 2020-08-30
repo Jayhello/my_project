@@ -10,6 +10,11 @@ add_subdirectory(common)
 
 add_subdirectory(network)
 
+add_subdirectory(common_proto)
+
+# for common.pb.h
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+
 add_subdirectory(demo/demo_common)
 
 add_subdirectory(demo/demo_network)

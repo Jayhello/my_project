@@ -1,0 +1,6 @@
+package common;
+
+message Info{
+    optional uint32 id = 1;
+    optional string name = 2;
+}
