@@ -108,10 +108,75 @@ void test_decorator(){
     std::cout<<p_bold_span->Show()<<std::endl;
 }
 
+struct User{
+    std::string name;
+    std::string pwd;
+    std::string ip;
+};
+
+class PluginBase{
+public:
+    virtual std::string Name() = 0;
+    virtual int DoCheck(User user, bool& is_spam) = 0;
+};
+
+class AccountPlugin:public PluginBase{
+public:
+    virtual std::string Name(){return "check name password";}
+    virtual int DoCheck(User user, bool& is_spam){
+        is_spam = (user.name == "xy" and user.pwd == "xy_pwd");
+        return 0;
+    }
+};
+
+class IpPlugin:public PluginBase{
+public:
+    virtual std::string Name(){return "ip white list";}
+    virtual int DoCheck(User user, bool& is_spam){
+        is_spam = (user.ip == "black ip");
+        return 0;
+    }
+};
+
+class AntiSpam{
+public:
+    int DoCheck(User user, bool& is_spam){
+        for(auto plugin : m_vec_plugin){
+            if(0 == plugin->DoCheck(user, is_spam) and is_spam){
+                printf("plugin %s hit\n", plugin->Name().c_str());
+                break;
+            }
+        }
+    }
+
+    AntiSpam& AddPlugin(PluginBase* p_plugin){
+        m_vec_plugin.push_back(p_plugin);
+
+        return *this;
+    }
+
+private:
+    std::vector<PluginBase*> m_vec_plugin;
+};
+
+void test_chain(){
+    User user1{"xy", "xy_pwd", ""};
+    User user2{"xy2", "xy_pwd2", "black ip"};
+
+    AntiSpam as;
+    as.AddPlugin(new AccountPlugin).AddPlugin(new IpPlugin);
+
+    bool is_spam;
+    as.DoCheck(user1, is_spam);
+    as.DoCheck(user2, is_spam);
+}
+
 int main() {
     Logger::getLogger().setLogLevel(Logger::LINFO);
 
-    test_adapter();
+    test_chain();
+
+//    test_adapter();
 //    test_decorator();
 //    test_service();
 
