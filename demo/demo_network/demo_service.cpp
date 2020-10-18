@@ -64,6 +64,39 @@ public:
     }
 };
 
+class Robot{
+public:
+    virtual std::string move() = 0;
+    virtual std::string say() = 0;
+};
+
+class Dog{
+public:
+    std::string wang(){
+        return "dog wang wang...";
+    }
+
+    std::string run(){
+        return "dog run run...";
+    }
+};
+
+class RobotDogAdapter: public Robot, Dog{
+public:
+    virtual std::string move(){
+        return "robot " + Dog::run();
+    }
+
+    virtual std::string say(){
+        return "robot " + Dog::wang();
+    }
+};
+
+void test_adapter(){
+    Robot* robot = new RobotDogAdapter();
+    std::cout<<robot->say()<<std::endl;
+}
+
 void test_decorator(){
     PureText pure;
     pure.SetText("pure");
@@ -78,7 +111,8 @@ void test_decorator(){
 int main() {
     Logger::getLogger().setLogLevel(Logger::LINFO);
 
-    test_decorator();
+    test_adapter();
+//    test_decorator();
 //    test_service();
 
     return 0;
