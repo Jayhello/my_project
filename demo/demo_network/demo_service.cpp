@@ -16,10 +16,70 @@ using namespace network::socket;
 
 void test_service();
 
+class Text{
+public:
+    virtual std::string Show()const = 0;
+};
+
+class PureText : public Text{
+public:
+    virtual std::string Show()const{
+        return text_;
+    }
+
+    void SetText(std::string text){
+        text_ = text;
+    }
+
+protected:
+    std::string text_;
+};
+
+class TextDecorator:public Text{
+public:
+    TextDecorator(Text* p):p_obj(p){
+    }
+
+protected:
+    Text* p_obj;
+};
+
+class BoldTextDecorator:public TextDecorator{
+public:
+    BoldTextDecorator(Text* p):TextDecorator(p){
+    }
+
+    virtual std::string Show()const{
+        return "<br>" + p_obj->Show() + "</br>";
+    }
+};
+
+class SpanTextDecorator: public TextDecorator{
+public:
+    SpanTextDecorator(Text* p):TextDecorator(p){
+    }
+
+    virtual std::string Show()const{
+        return "<span>" + p_obj->Show() + "</span>";
+    }
+};
+
+void test_decorator(){
+    PureText pure;
+    pure.SetText("pure");
+
+    Text* p_bold = new BoldTextDecorator(&pure);
+    std::cout<<p_bold->Show()<<std::endl;
+
+    Text* p_bold_span = new SpanTextDecorator(p_bold);
+    std::cout<<p_bold_span->Show()<<std::endl;
+}
+
 int main() {
     Logger::getLogger().setLogLevel(Logger::LINFO);
 
-    test_service();
+    test_decorator();
+//    test_service();
 
     return 0;
 }
