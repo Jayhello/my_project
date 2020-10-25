@@ -12,12 +12,16 @@ add_subdirectory(network)
 
 add_subdirectory(common_proto)
 
+add_subdirectory(http)
+
 # for common.pb.h
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 add_subdirectory(demo/demo_common)
 
 add_subdirectory(demo/demo_network)
+
+add_subdirectory(demo/demo_http)
 
 set(SOURCE_FILES main.cpp)
 add_executable(my_project ${SOURCE_FILES})

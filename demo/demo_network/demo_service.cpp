@@ -171,10 +171,17 @@ void test_chain(){
     as.DoCheck(user2, is_spam);
 }
 
+std::string FloatToString(float f){
+    long i_val = f;
+}
+
 int main() {
     Logger::getLogger().setLogLevel(Logger::LINFO);
 
-    test_chain();
+    double d = 154546.9998;
+    long i_val = long(d);
+    std::cout<<i_val<<std::endl;
+//    test_chain();
 
 //    test_adapter();
 //    test_decorator();
