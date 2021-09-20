@@ -48,17 +48,25 @@ private:
     typedef rw_lock::RW_W_Lock WLock;
     typedef rw_lock::RW_R_Lock RLock;
 
-//    typedef std::mutex RWMutex;
-//    typedef std::unique_lock<RWMutex> WLock;
-//    typedef std::unique_lock<RWMutex> RLock;
-
     RWMutex mtx_;
     int count_;
+};
+
+class SpinCount{
+public:
+    void add(int i);
+
+    int get();
+private:
+    int count_ = 0;
+    rw_lock::SpinMutex mtx_;
 };
 
 void TestRWLock();
 
 void TestRWLockBoost();
+
+void TestSpinLock();
 
 int main(int argc, char** argv){
     Logger::getLogger().setLogLevel(Logger::LINFO);
@@ -66,7 +74,9 @@ int main(int argc, char** argv){
     auto start = comm::util::util::timeMicro();
 
 //    TestRWLock();
-    TestRWLockBoost();
+//    TestRWLockBoost();
+
+    TestSpinLock();
 
     auto end = comm::util::util::timeMicro();
 
@@ -112,6 +122,38 @@ void TestRWLockBoost(){
         auto del_fun = std::bind(&Counter::Del, std::ref(counter), 100 - i);
         tp.emplace(del_fun);
     }
+}
+
+void TestSpinLock(){
+    SpinCount counter;
+
+    BOOST_SCOPE_EXIT_ALL(&){
+        info("exit count: %d", counter.get());
+    };
+
+    auto get_fun = [&](){
+        int c = 100;
+        while(c--){
+            int val = counter.get();
+            if(val % 100 == 0){
+                std::cout << "get: " << val << std::endl;
+            }
+        }
+    };
+
+    auto add_fun = [&](){
+        for(int i = 0; i < 1000; ++i){
+            counter.add(1);
+        }
+    };
+
+    thread_pool::ThreadPool1 tp(8);
+
+    tp.emplace(add_fun);
+    tp.emplace(get_fun);
+    tp.emplace(add_fun);
+    tp.emplace(add_fun);
+    tp.emplace(add_fun);
 }
 
 void SleepSec(int s){
@@ -170,4 +212,14 @@ int BankAccount::DeltMoney(const std::string& delt_op, int delt){
 
     rw_lock_.unlockW();
     return money_;
+}
+
+void SpinCount::add(int i){
+    rw_lock::Lock_T<rw_lock::SpinMutex> lk(mtx_);
+    count_ += i;
+}
+
+int SpinCount::get(){
+    rw_lock::Lock_T<rw_lock::SpinMutex> lk(mtx_);
+    return count_;
 }

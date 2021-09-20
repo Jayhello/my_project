@@ -6,6 +6,7 @@
 
 #include <mutex>
 #include <condition_variable>
+#include <atomic>
 
 namespace comm{
 namespace rw_lock{
@@ -22,7 +23,6 @@ public:
 
     void lockW();
     void unlockW();
-
 private:
     volatile uint32_t read_num_ = 0;
     volatile bool is_write_ = false;
@@ -91,6 +91,34 @@ public:
 typedef WLock<ShareMutex> RW_W_Lock;
 
 typedef RLock<ShareMutex> RW_R_Lock;
+
+class SpinMutex{
+public:
+    void lock();
+
+    void unlock();
+private:
+    std::atomic<bool> flag_{false};
+};
+
+template<typename T>
+class Lock_T{
+public:
+    Lock_T(T& mtx):mtx_(mtx){
+        mtx_.lock();
+        own_ = true;
+    }
+
+    ~Lock_T(){
+        if(own_){
+            mtx_.unlock();
+        }
+    }
+
+private:
+    T& mtx_;
+    bool own_ = false;
+};
 
 } // rw_lock
 } // comm
