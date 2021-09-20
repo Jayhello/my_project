@@ -24,51 +24,73 @@ public:
     void unlockW();
 
 private:
+    volatile uint32_t read_num_ = 0;
+    volatile bool is_write_ = false;
+
     std::mutex mtx_;
     std::condition_variable r_ready_, w_ready_;
-
-    volatile uint32_t read_num_;
-    volatile bool is_write_;
 };
 
-RWLock::RWLock():read_num_(0), is_write_(false){}
+/*
+    上面的版本有问题, read_num_ 非线程安全应该为 atomic_int
+    同时锁一般都是结合互斥体一起使用上面得显示lock, unlock这样也不安全
+    下面看tars中的读写锁
+*/
+class ShareMutex{
+public:
+    void lockR();
 
-void RWLock::lockR(){
-    std::unique_lock<std::mutex> lock(mtx_);
+    void unlockR();
 
-    r_ready_.wait(lock, [&]{
-       return !is_write_;
-    });
+    void lockW();
 
-    ++read_num_;
-}
+    void unlockW();
+private:
+    volatile int read_num_ = 0;
+    volatile bool is_write_ = false;
+    std::mutex mtx_;
+    std::condition_variable cv_read_, cv_write_;
+};
 
-void RWLock::unlockR(){
-    std::unique_lock<std::mutex> lock(mtx_);
-
-    --read_num_;
-    if(0 == read_num_){
-        w_ready_.notify_one();
+template<typename Mutex>
+class RLock{
+public:
+    explicit RLock(Mutex& mtx):mtx_(mtx){
+        mtx_.lockR();
+        own_ = true;
     }
-}
 
-void RWLock::lockW(){
-    std::unique_lock<std::mutex> lock(mtx_);
+    ~RLock(){
+        if(own_){
+            mtx_.unlockR();
+        }
+    }
 
-    w_ready_.wait(lock, [&]{
-        return !is_write_ and 0 == read_num_;
-    });
+    Mutex& mtx_;
+    mutable bool own_ = false;
+};
 
-    is_write_ = true;
-}
+template<typename Mutex>
+class WLock{
+public:
+    explicit WLock(Mutex& mtx):mtx_(mtx){
+        mtx_.lockW();
+        own_ = true;
+    }
 
-void RWLock::unlockW(){
-    std::unique_lock<std::mutex> lock(mtx_);
-    is_write_ = false;
+    ~WLock(){
+        if(own_){
+            mtx_.unlockW();
+        }
+    }
 
-    w_ready_.notify_one();
-    r_ready_.notify_all();
-}
+    Mutex& mtx_;
+    mutable bool own_ = false;
+};
+
+typedef WLock<ShareMutex> RW_W_Lock;
+
+typedef RLock<ShareMutex> RW_R_Lock;
 
 } // rw_lock
 } // comm

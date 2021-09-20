@@ -26,8 +26,8 @@ public:
 protected:
     int DeltMoney(const std::string& delt_op, int val);
 private:
-    rw_lock::RWLock rw_lock_;
     int money_;
+    rw_lock::RWLock rw_lock_;
 };
 
 class Counter{
@@ -40,9 +40,13 @@ public:
     int Delt(const std::string& delt_op, int val);
 
 private:
-    typedef boost::shared_mutex RWMutex;
-    typedef boost::unique_lock<RWMutex> WLock;
-    typedef boost::shared_lock<RWMutex> RLock;
+//    typedef boost::shared_mutex RWMutex;
+//    typedef boost::unique_lock<RWMutex> WLock;
+//    typedef boost::shared_lock<RWMutex> RLock;
+
+    typedef rw_lock::ShareMutex RWMutex;
+    typedef rw_lock::RW_W_Lock WLock;
+    typedef rw_lock::RW_R_Lock RLock;
 
 //    typedef std::mutex RWMutex;
 //    typedef std::unique_lock<RWMutex> WLock;
@@ -53,13 +57,20 @@ private:
 };
 
 void TestRWLock();
+
 void TestRWLockBoost();
 
 int main(int argc, char** argv){
     Logger::getLogger().setLogLevel(Logger::LINFO);
 
+    auto start = comm::util::util::timeMicro();
+
 //    TestRWLock();
     TestRWLockBoost();
+
+    auto end = comm::util::util::timeMicro();
+
+    std::cout << "consume: " << (end - start) << std::endl;
 
     return 0;
 }
@@ -92,14 +103,14 @@ void TestRWLockBoost(){
 
     thread_pool::ThreadPool1 tp(4);
 
-    for(int i = 0; i < 50; ++i){
+    for(int i = 1; i <= 100; ++i){
         tp.emplace(get_fun);
 
         auto add_fun = std::bind(&Counter::Inc, std::ref(counter), i);
         tp.emplace(add_fun);
 
-        auto del_fun = std::bind(&Counter::Del, std::ref(counter), 49 - i);
-//        tp.emplace(del_fun);
+        auto del_fun = std::bind(&Counter::Del, std::ref(counter), 100 - i);
+        tp.emplace(del_fun);
     }
 }
 

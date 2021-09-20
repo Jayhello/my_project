@@ -5,6 +5,12 @@ project(demo_common)
 set(CMAKE_CXX_STANDARD 11)
 SET(CMAKE_CXX_FLAGS -pthread)
 
+
+set(BOOST_ROOT "/mnt/f/3rd/dependence/")
+set(BOOST_INCLUDE_DIRS "${BOOST_ROOT}/include")
+set(BOOST_LIBRARY_DIRS "${BOOST_ROOT}/lib")
+
+
 find_package(Boost REQUIRED regex date_time thread system filesystem program_options)
 include_directories(${BOOST_INCLUDE_DIRS})
 message("boost lib: ${Boost_LIBRARIES}")

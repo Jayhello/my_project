@@ -5,6 +5,7 @@
 #include <iostream>
 #include "common/logging.h"
 #include "http/http_header.h"
+#include "common_proto/common.pb.h"
 
 void test_header();
 
@@ -21,6 +22,11 @@ using std::cout;
 using std::endl;
 
 void test_header(){
+    common::Info info;
+    info.set_id(1);
+    info.set_name("xy");
+    info.PrintDebugString();
+
     HttpHeader header;
 
     header.AddHeader("api_version", "1.0.0");

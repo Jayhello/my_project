@@ -6,6 +6,13 @@ SET(CMAKE_CXX_FLAGS -pthread)
 
 include_directories(./)
 
+set(BOOST_ROOT "/mnt/f/3rd/dependence/")
+set(BOOST_INCLUDE_DIRS "${BOOST_ROOT}/include")
+set(BOOST_LIBRARY_DIRS "${BOOST_ROOT}/lib")
+
+find_package(Protobuf REQUIRED)
+message("main Protobuf lib: ${PROTOBUF_LIBRARIES}, inc: ${PROTOBUF_INCLUDE_DIR}")
+
 add_subdirectory(common)
 
 add_subdirectory(network)

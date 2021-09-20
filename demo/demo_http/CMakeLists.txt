@@ -11,7 +11,6 @@ message("boost lib: ${Boost_LIBRARIES}")
 message("boost inc:${Boost_INCLUDE_DIR}")
 message("network_lib :${network_lib}")
 
-
 add_executable(demo_http demo_http.cpp)
 target_link_libraries(demo_http
         common_lib
