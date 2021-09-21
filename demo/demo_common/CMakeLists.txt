@@ -25,6 +25,12 @@ target_link_libraries(demo_rwlock
         ${Boost_LIBRARIES}
         )
 
+add_executable(demo_comm demo_comm.cpp)
+target_link_libraries(demo_comm
+        common_lib
+        ${Boost_LIBRARIES}
+        )
+
 find_package(PkgConfig)
 pkg_check_modules(YAMLCPP REQUIRED yaml-cpp>=0.5)
 include_directories(${YAML_CPP_INCLUDE_DIR})
