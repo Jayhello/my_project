@@ -4,6 +4,7 @@
 
 #pragma once
 
+#include "noncopyable.h"
 #include <stdlib.h>
 #include <string.h>
 #include <functional>
@@ -13,15 +14,6 @@
 
 namespace comm{
 namespace util{
-
-struct noncopyable {
-protected:
-    noncopyable() = default;
-    virtual ~noncopyable() = default;
-
-    noncopyable(const noncopyable &) = delete;
-    noncopyable &operator=(const noncopyable &) = delete;
-};
 
 struct util {
     static std::string format(const char *fmt, ...);

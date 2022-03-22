@@ -8,4 +8,4 @@ SET(CMAKE_CXX_FLAGS -pthread)
 file(GLOB COMMON_SRCS ./*.cpp ./*.h)
 
 add_library(common_lib
-        ${COMMON_SRCS})
+        ${COMMON_SRCS} singleton.cpp singleton.h noncopyable.h)
