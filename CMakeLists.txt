@@ -31,6 +31,8 @@ add_subdirectory(demo/demo_network)
 
 add_subdirectory(demo/demo_http)
 
+add_subdirectory(demo/demo_raw_network)
+
 set(SOURCE_FILES main.cpp)
 add_executable(my_project ${SOURCE_FILES})
 target_link_libraries(my_project common_lib)
