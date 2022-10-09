@@ -5,6 +5,7 @@
 
 namespace v1{
 
+void echoClient();
 
 } // v1
 

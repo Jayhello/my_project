@@ -8,11 +8,13 @@
 #include <string>
 #include "util.h"
 
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
+
 #ifdef NDEBUG
 #define hlog(level, ...)                                                                \
     do {                                                                                \
         if (level <= Logger::getLogger().getLogLevel()) {                               \
-            Logger::getLogger().logv(level, __FILE__, __LINE__, __func__, __VA_ARGS__); \
+            Logger::getLogger().logv(level, __FILENAME__, __LINE__, __func__, __VA_ARGS__); \
         }                                                                               \
     } while (0)
 #else
@@ -20,7 +22,7 @@
     do {                                                                                \
         if (level <= Logger::getLogger().getLogLevel()) {                               \
             snprintf(0, 0, __VA_ARGS__);                                                \
-            Logger::getLogger().logv(level, __FILE__, __LINE__, __func__, __VA_ARGS__); \
+            Logger::getLogger().logv(level, __FILENAME__, __LINE__, __func__, __VA_ARGS__); \
         }                                                                               \
     } while (0)
 
@@ -51,6 +53,22 @@
         }                                      \
     } while (0)
 #endif
+
+#define return_if(b, ...)                      \
+    do {                                       \
+        if ((b)) {                             \
+            hlog(Logger::LERROR, __VA_ARGS__); \
+            return;                            \
+        }                                      \
+    } while (0)
+
+#define return_ret_if(b, ret, ...)             \
+    do {                                       \
+        if ((b)) {                             \
+            hlog(Logger::LERROR, __VA_ARGS__); \
+            return ret;                        \
+        }                                      \
+    } while (0)
 
 #define setloglevel(l) Logger::getLogger().setLogLevel(l)
 #define setlogfile(n) Logger::getLogger().setFileName(n)
