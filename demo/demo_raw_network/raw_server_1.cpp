@@ -3,7 +3,11 @@
 //
 
 #include "raw_server_1.h"
-
+#include <fcntl.h>
+#include <netinet/tcp.h>
+#include <assert.h>
+#include <unistd.h>
+#include <netinet/in.h>
 #include "common/logging.h"
 #include "common/thread_pool.h"
 
@@ -20,5 +24,9 @@ int main(int argc, char** argv){
 
 namespace v1{
 
+void echoServer(){
+    int fd = ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+
+}
 
 } // v1
