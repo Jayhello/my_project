@@ -88,7 +88,7 @@ ThreadPool1::~ThreadPool1() {
 }
 
 template<typename T>
-class SafeQueue: private comm::util::noncopyable{
+class SafeQueue: private comm::noncopyable{
 public:
     static const int WAIT_INFINITE = std::numeric_limits<int>::max();
 
@@ -118,7 +118,7 @@ private:
 
 typedef std::function<void()> Task;
 
-class ThreadPool : private comm::util::noncopyable{
+class ThreadPool : private comm::noncopyable{
 public:
     ThreadPool(int num);
     ~ThreadPool();
