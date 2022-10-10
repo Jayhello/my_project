@@ -59,3 +59,34 @@ void echoClient(){
 }
 
 } // v1
+
+// 使用封装的函数, 示例
+namespace v2{
+
+void echoClient(){
+    int fd = raw_v1::getTcpSocket();
+    return_if(fd <= 0, "get_socket_fd_fail");
+    info("fd: %d", fd);
+
+    int ret = raw_v1::doConnect(fd, "127.0.0.1", 8888);
+    return_if(ret < 0, "connect_fail");
+    info("connect succ");
+
+    string input;
+    while(cin >> input){
+        if(input.substr(0, 1) == "q"){
+            info("input q break");
+            break;
+        }
+
+        int iWriteSize = raw_v1::doWrite(fd, input);
+        if(iWriteSize < 0){
+            warn("write fail: %d", iWriteSize);
+            break;
+        }
+    }
+
+    raw_v1::doClose(fd);
+}
+
+} // v2

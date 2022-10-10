@@ -9,3 +9,8 @@ namespace v1{
 void echoServer();
 
 } // v1
+
+// 使用封装的函数, 示例
+namespace v2{
+
+}
