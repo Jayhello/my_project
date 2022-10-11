@@ -23,6 +23,9 @@ using std::endl;
 using namespace comm;
 using namespace comm::log;
 
+#define LOCAL_IP    "127.0.0.1"
+#define PORT        8880
+
 // 用原始的socket编程不少参数不好理解, 而且繁琐, 因此这里封装更好懂的c++接口, 简化编程
 namespace raw_v1{
 

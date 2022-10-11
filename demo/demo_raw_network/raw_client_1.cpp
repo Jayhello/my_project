@@ -9,7 +9,8 @@ int main(int argc, char** argv){
     Logger::getLogger().setLogLevel(Logger::LINFO);
     info("start client1 demo");
 
-    v1::echoClient();
+//    v1::echoClient();
+    v2::echoClient();
 
     info("exit client1 demo");
     return 0;
@@ -26,8 +27,8 @@ void echoClient(){
     struct sockaddr_in serv_addr;
     bzero(&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    serv_addr.sin_port = htons(8888);
+    serv_addr.sin_addr.s_addr = inet_addr(LOCAL_IP);
+    serv_addr.sin_port = htons(PORT);
 
     int ret = connect(fd, (sockaddr*)&serv_addr, sizeof(serv_addr));
     return_if(ret < 0, "connect err: %d", ret);
@@ -36,7 +37,8 @@ void echoClient(){
         char buf[1024];
         bzero(&buf, sizeof(buf));
         scanf("%s", buf);
-        ssize_t write_bytes = write(fd, buf, sizeof(buf));
+//        ssize_t write_bytes = write(fd, buf, sizeof(buf));
+        ssize_t write_bytes = write(fd, buf, strlen(buf));
         if(write_bytes == -1){
             info("socket already disconnected, can't write any more!");
             break;
@@ -68,12 +70,17 @@ void echoClient(){
     return_if(fd <= 0, "get_socket_fd_fail");
     info("fd: %d", fd);
 
-    int ret = raw_v1::doConnect(fd, "127.0.0.1", 8888);
+    int ret = raw_v1::doConnect(fd, LOCAL_IP, PORT);
     return_if(ret < 0, "connect_fail");
     info("connect succ");
 
     string input;
-    while(cin >> input){
+    while(1){
+        char buf[1024];
+        bzero(&buf, sizeof(buf));
+        scanf("%s", buf);
+        input.assign(buf, strlen(buf));
+
         if(input.substr(0, 1) == "q"){
             info("input q break");
             break;
@@ -82,6 +89,25 @@ void echoClient(){
         int iWriteSize = raw_v1::doWrite(fd, input);
         if(iWriteSize < 0){
             warn("write fail: %d", iWriteSize);
+            break;
+        }
+
+        info("send : %s, size: %d to server", input.c_str(), iWriteSize);
+
+        string sData;
+        int iReadSize = raw_v1::doRead(fd, sData, 1024);
+        if(iReadSize > 0) {
+            info("get msg from fd: %d, %s", fd, sData.c_str());
+            int iWriteSize = raw_v1::doWrite(fd, sData);
+            if (iWriteSize < 0) {
+                error("fd: %d write fail close it", fd);
+                break;
+            }
+        }else if(0 == iReadSize){
+            info("server has close");
+            break;
+        }else{
+            error("fd: %d read fail close it", fd);
             break;
         }
     }

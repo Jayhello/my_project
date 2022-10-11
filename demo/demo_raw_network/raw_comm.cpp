@@ -54,9 +54,16 @@ int doWrite(int fd, const string& sData){
 }
 
 int doRead(int fd, string& sData, size_t iReadSize){
-    sData.reserve(iReadSize);
-    ssize_t read_bytes = read(fd, &sData[0], iReadSize);
-    sData.resize(read_bytes >= 0 ? read_bytes : 0);
+    // 如下不能直接read(fd, string) 有问题
+//    sData.reserve(iReadSize + 1);
+//    ssize_t read_bytes = read(fd, const_cast<char*>(sData.data()), iReadSize);
+//    sData.resize(read_bytes > 0 ? read_bytes + 1 : 0);
+    char arr[1024]= {0};
+    ssize_t read_bytes = read(fd, arr, iReadSize);
+    if(read_bytes > 0){
+        sData.assign(arr, read_bytes);
+    }
+
     return read_bytes;
 }
 

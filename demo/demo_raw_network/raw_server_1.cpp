@@ -9,7 +9,8 @@ int main(int argc, char** argv){
     Logger::getLogger().setLogLevel(Logger::LINFO);
     info("start server1 demo");
 
-    v1::echoServer();
+//    v1::echoServer();
+    v2::echoServer();
 
     info("exit server1 demo");
     return 0;
@@ -26,8 +27,8 @@ void echoServer(){
     struct sockaddr_in serv_addr;
     bzero(&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
-    serv_addr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    serv_addr.sin_port = htons(8888);
+    serv_addr.sin_addr.s_addr = inet_addr(LOCAL_IP);
+    serv_addr.sin_port = htons(PORT);
 
     int ret = bind(fd, (sockaddr*)&serv_addr, sizeof(serv_addr));
     return_if(ret < 0, "bind err: %d", ret);
@@ -64,3 +65,58 @@ void echoServer(){
 }
 
 } // v1
+
+// 使用封装的函数, 示例
+namespace v2{
+
+void echoServer(){
+    int fd = raw_v1::getTcpSocket();
+    return_if(fd <= 0, "get_socket_fd_fail");
+    info("fd: %d", fd);
+
+    int ret = raw_v1::doBind(fd, LOCAL_IP, PORT);
+    return_if(ret < 0, "bind fail: %d", ret);
+
+    ret = raw_v1::doListen(fd);
+    return_if(ret < 0, "listen fail: %d", ret);
+
+    while(1){
+        string cIp;
+        int cPort = 0;
+        int cfd = raw_v1::doAccept(fd, cIp, cPort);
+        if(cfd <= 0){
+            error("accept error: %d", cfd);
+            break;
+        }
+
+        info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+
+        while(1){
+            string sData;
+            int iReadSize = raw_v1::doRead(cfd, sData, 1024);
+            if(iReadSize > 0) {
+                info("get msg from fd: %d, %s", cfd, sData.c_str());
+                int iWriteSize = raw_v1::doWrite(cfd, sData);
+                if (iWriteSize < 0) {
+                    error("fd: %d write fail close it", fd);
+                    raw_v1::doClose(cfd);
+                    break;
+                }
+            }else if(0 == iReadSize){
+                info("fd: %d has close", fd);
+                break;
+            }else{
+                error("fd: %d read fail close it", fd);
+                raw_v1::doClose(cfd);
+                break;
+            }
+        }
+
+        info("now wait to accept new client");
+    }
+
+    info("exit");
+    raw_v1::doClose(fd);
+}
+
+}
