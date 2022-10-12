@@ -3,4 +3,7 @@
 
 https://github.com/yuesong-feng/30dayMakeCppServer
 
+socket read 如何被阻塞, 被唤醒的
+从linux源码看socket的阻塞和非阻塞
+https://blog.51cto.com/u_3522866/2717461
 

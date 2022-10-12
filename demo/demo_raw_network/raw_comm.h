@@ -15,6 +15,7 @@
 #include "common/thread_pool.h"
 #include <string>
 #include <iostream>
+#include <signal.h>
 
 using std::string;
 using std::cout;

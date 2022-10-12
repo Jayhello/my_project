@@ -97,12 +97,7 @@ void echoClient(){
         string sData;
         int iReadSize = raw_v1::doRead(fd, sData, 1024);
         if(iReadSize > 0) {
-            info("get msg from fd: %d, %s", fd, sData.c_str());
-            int iWriteSize = raw_v1::doWrite(fd, sData);
-            if (iWriteSize < 0) {
-                error("fd: %d write fail close it", fd);
-                break;
-            }
+            info("get msg from fd: %d, size : %d, %s", fd, iReadSize, sData.c_str());
         }else if(0 == iReadSize){
             info("server has close");
             break;

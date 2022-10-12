@@ -69,7 +69,16 @@ void echoServer(){
 // 使用封装的函数, 示例
 namespace v2{
 
+static volatile int keepRunning = 1;
+
+void intHandler(int dummy) {
+    info("catch ctrl c, exit");
+    keepRunning = 0;
+}
+
 void echoServer(){
+    signal(SIGINT, intHandler);
+
     int fd = raw_v1::getTcpSocket();
     return_if(fd <= 0, "get_socket_fd_fail");
     info("fd: %d", fd);
@@ -80,7 +89,7 @@ void echoServer(){
     ret = raw_v1::doListen(fd);
     return_if(ret < 0, "listen fail: %d", ret);
 
-    while(1){
+    while(keepRunning){   // 这里不见得可以捕获的到, 因为进程阻塞在了accept
         string cIp;
         int cPort = 0;
         int cfd = raw_v1::doAccept(fd, cIp, cPort);
@@ -95,18 +104,20 @@ void echoServer(){
             string sData;
             int iReadSize = raw_v1::doRead(cfd, sData, 1024);
             if(iReadSize > 0) {
-                info("get msg from fd: %d, %s", cfd, sData.c_str());
+                info("get msg from fd: %d, size: %d, %s", cfd, iReadSize, sData.c_str());
                 int iWriteSize = raw_v1::doWrite(cfd, sData);
                 if (iWriteSize < 0) {
                     error("fd: %d write fail close it", fd);
                     raw_v1::doClose(cfd);
                     break;
                 }
+                info("echo back size: %d, %s", iWriteSize, sData.c_str());
             }else if(0 == iReadSize){
                 info("fd: %d has close", fd);
+                raw_v1::doClose(cfd);
                 break;
             }else{
-                error("fd: %d read fail close it", fd);
+                error("fd: %d read fail close it", cfd);
                 raw_v1::doClose(cfd);
                 break;
             }
