@@ -16,3 +16,5 @@ namespace v2{
 void echoServer();
 
 }
+
+// 如果每个链接来了, 都丢到线程去异步处理, 有个问题, fd阻塞的方式read不到数据
