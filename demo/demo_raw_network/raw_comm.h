@@ -16,6 +16,7 @@
 #include <string>
 #include <iostream>
 #include <signal.h>
+#include "coroutine.h"
 
 using std::string;
 using std::cout;
