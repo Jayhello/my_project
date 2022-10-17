@@ -71,4 +71,29 @@ int doClose(int fd){
     return ::close(fd);
 }
 
+int setReuseAddr(int fd){
+    int flag = 1;
+    return setSocketOpt(fd, SO_REUSEADDR, (void*)(&flag), (socklen_t)(sizeof(flag)), SOL_SOCKET);
+}
+
+int setReusePort(int fd){
+    int flag = 1;
+    return setSocketOpt(fd, SO_REUSEPORT, (void*)(&flag), (socklen_t)(sizeof(flag)), SOL_SOCKET);
+}
+
+int setSocketOpt(int fd, int opt, const void* val, socklen_t opt_len, int level){
+    return setsockopt(fd, level, opt, &val, opt_len);;
+}
+
+int setNonBlock(int fd, bool value) {
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0) {
+        return errno;
+    }
+    if (value) {
+        return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+    }
+    return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+}
+
 } // raw_v1

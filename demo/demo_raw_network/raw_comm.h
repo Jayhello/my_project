@@ -51,4 +51,13 @@ int doWrite(int fd, const string& sData);
 int doRead(int fd, string& sData, size_t iReadSize);
 
 int doClose(int fd);
+
+int setNonBlock(int fd, bool value);
+
+int setReuseAddr(int fd);
+
+int setReusePort(int fd);
+
+int setSocketOpt(int fd, int opt, const void* val, socklen_t opt_len, int level);
+
 } // raw_v1

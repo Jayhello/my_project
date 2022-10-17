@@ -70,8 +70,10 @@ void echoClient(){
     return_if(fd <= 0, "get_socket_fd_fail");
     info("fd: %d", fd);
 
-    int ret = raw_v1::doConnect(fd, LOCAL_IP, PORT);
-    return_if(ret < 0, "connect_fail");
+//    int ret = raw_v1::doConnect(fd, LOCAL_IP, PORT);
+int ret = raw_v1::doConnect(fd, "39.156.66.10", PORT);   // 这里随便搞了个ip, 20多秒
+//    return_if(ret < 0, "connect_fail ret: %d, %s", ret, strerror(ret));
+return_if(ret < 0, "connect_fail ret: %d, %s", ret, strerror(errno));
     info("connect succ");
 
     string input;
