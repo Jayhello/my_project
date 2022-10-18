@@ -3,6 +3,7 @@
 //
 #pragma once
 
+
 // 原始的 socket 实现的echo server
 namespace v1{
 
@@ -24,4 +25,8 @@ void echoServer();
  2. 将socket设置为非阻塞, 一个线程可以遍历所有的socket检查是否有数据读, 有则去处理
 */
 
+namespace v3{
 
+void echoServer();
+
+} // v3

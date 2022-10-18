@@ -74,6 +74,23 @@ ThreadPool::~ThreadPool(){
     }
 }
 
+void Thread::start(){
+    {
+        // try_lock就可以很好的防止并发开启线程
+        std::unique_lock<std::mutex> lk(mtx_, std::try_to_lock);
+        if(not lk.owns_lock() or running_){
+            throw std::logic_error("thread has start");
+        }
+
+        running_ = true;
+    }
+
+    th_.reset(new std::thread([this](){
+        this->run();
+        running_ = false;
+    }));
+    //    running_ = false;
+}
 
 } // thread_pool
 } // comm

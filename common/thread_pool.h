@@ -167,5 +167,27 @@ void SafeQueue<T>::exit(){
     ready_.notify_all();
 }
 
+class Thread{
+public:
+    virtual ~Thread() = default;
+
+    void start();
+
+    void join(){
+        th_->join();
+    }
+
+    void detach(){
+        th_->detach();
+    }
+
+protected:
+    virtual void run() = 0;
+
+    volatile bool                running_ = false;
+    std::unique_ptr<std::thread> th_;
+    std::mutex                   mtx_;
+};
+
 } // thread
 } // comm
