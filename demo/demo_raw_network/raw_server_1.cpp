@@ -131,3 +131,22 @@ void echoServer(){
 }
 
 } // v2
+
+namespace v3{
+
+class ProcessTask : public comm::thread_pool::Thread{
+public:
+    void addSocket(int cfd);
+
+protected:
+    virtual void run() override{
+
+    }
+
+};
+
+void echoServer(){
+
+}
+
+} // v3

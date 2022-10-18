@@ -189,5 +189,5 @@ protected:
     std::mutex                   mtx_;
 };
 
-} // thread
+} // thread_pool
 } // comm
