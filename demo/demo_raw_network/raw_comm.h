@@ -52,7 +52,7 @@ int doRead(int fd, string& sData, size_t iReadSize);
 
 int doClose(int fd);
 
-int setNonBlock(int fd, bool value);
+int setNonBlock(int fd, bool value = true);
 
 int setReuseAddr(int fd);
 

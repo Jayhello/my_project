@@ -10,7 +10,8 @@ int main(int argc, char** argv){
     info("start server1 demo");
 
 //    v1::echoServer();
-    v2::echoServer();
+//    v2::echoServer();
+    v3::echoServer();
 
     info("exit server1 demo");
     return 0;
@@ -136,17 +137,89 @@ namespace v3{
 
 class ProcessTask : public comm::thread_pool::Thread{
 public:
-    void addSocket(int cfd);
-
-protected:
-    virtual void run() override{
-
+    void addSocket(int cfd){
+        raw_v1::setNonBlock(cfd);
+        vFd_.push_back(cfd);
     }
 
+    virtual ~ProcessTask(){
+        for(auto fd : vFd_)raw_v1::doClose(fd);
+    }
+
+    void stop(){stop_ = true;}
+protected:
+    virtual void run() override{
+        while(not stop_){
+            handlerAll();
+        }
+    }
+
+    void handlerAll(){
+        for(auto cfd : vFd_){
+            string sData;
+            int iReadSize = raw_v1::doRead(cfd, sData, 1024);
+            if(iReadSize > 0) {
+                info("get msg from fd: %d, size: %d, %s", cfd, iReadSize, sData.c_str());
+                int iWriteSize = raw_v1::doWrite(cfd, sData);
+                if (iWriteSize < 0) {
+                    error("fd: %d write fail close it", cfd);
+                    raw_v1::doClose(cfd);
+                    break;
+                }
+                info("echo back size: %d, %s", iWriteSize, sData.c_str());
+            }else if(0 == iReadSize){
+                info("fd: %d has close", cfd);
+                raw_v1::doClose(cfd);
+                break;
+            }else{
+                int error = errno;
+                if(EAGAIN == error or EWOULDBLOCK == error or EINTR == error){
+                    info("fd: %d no data...., ret: %d error: %d, %s", cfd, iReadSize, error, strerror(error));
+                }else{
+                    error("fd: %d read fail close it, ret: %d error: %d, %s", cfd, iReadSize, error, strerror(error));
+                    raw_v1::doClose(cfd);
+                }
+                break;
+            }
+        }
+
+        info("now sleep wait...");
+        sleep(1);
+    }
+
+    std::vector<int>  vFd_;
+    volatile bool stop_ = false;
 };
 
 void echoServer(){
+    int fd = raw_v1::getTcpSocket();
+    return_if(fd <= 0, "get_socket_fd_fail");
+    info("fd: %d", fd);
 
+    int ret = raw_v1::doBind(fd, LOCAL_IP, PORT);
+    return_if(ret < 0, "bind fail: %d", ret);
+
+    ret = raw_v1::doListen(fd);
+    return_if(ret < 0, "listen fail: %d", ret);
+
+    ProcessTask task;
+    task.start();
+
+    while(1){
+        string cIp;
+        int cPort = 0;
+        int cfd = raw_v1::doAccept(fd, cIp, cPort);
+        if(cfd <= 0){
+            error("accept error: %d", cfd);
+            break;
+        }
+
+        info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+
+        task.addSocket(cfd);
+    }
+
+    task.stop();
 }
 
 } // v3
