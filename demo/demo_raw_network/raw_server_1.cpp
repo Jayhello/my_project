@@ -4,6 +4,7 @@
 
 #include "raw_server_1.h"
 #include "raw_comm.h"
+#include <set>
 
 int main(int argc, char** argv){
     Logger::getLogger().setLogLevel(Logger::LINFO);
@@ -139,11 +140,11 @@ class ProcessTask : public comm::thread_pool::Thread{
 public:
     void addSocket(int cfd){
         raw_v1::setNonBlock(cfd);
-        vFd_.push_back(cfd);
+        setFd_.insert(cfd);
     }
 
     virtual ~ProcessTask(){
-        for(auto fd : vFd_)raw_v1::doClose(fd);
+        for(auto fd : setFd_)raw_v1::doClose(fd);
     }
 
     void stop(){stop_ = true;}
@@ -155,7 +156,8 @@ protected:
     }
 
     void handlerAll(){
-        for(auto cfd : vFd_){
+
+        for(auto cfd : setFd_){
             string sData;
             int iReadSize = raw_v1::doRead(cfd, sData, 1024);
             if(iReadSize > 0) {
@@ -187,7 +189,7 @@ protected:
         sleep(1);
     }
 
-    std::vector<int>  vFd_;
+    std::set<int>  setFd_;
     volatile bool stop_ = false;
 };
 
