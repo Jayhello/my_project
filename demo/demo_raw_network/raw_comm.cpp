@@ -22,6 +22,9 @@ int doConnect(int fd, const string& sIp, int iPort){
 }
 
 int doBind(int fd, const string& sIp, int iPort){
+    int op = 1;
+    setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &op, sizeof(op));
+
     struct sockaddr_in serv_addr;
     bzero(&serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
@@ -94,6 +97,13 @@ int setNonBlock(int fd, bool value) {
         return fcntl(fd, F_SETFL, flags | O_NONBLOCK);
     }
     return fcntl(fd, F_SETFL, flags & ~O_NONBLOCK);
+}
+
+void setNoBlock(int fd){
+    int flag = fcntl(fd, F_GETFL, 0);
+
+    flag |= O_NONBLOCK;
+    fcntl(fd, F_SETFL, flag);
 }
 
 } // raw_v1

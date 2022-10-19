@@ -10,7 +10,8 @@ int main(int argc, char** argv){
     info("start client1 demo");
 
 //    v1::echoClient();
-    v2::echoClient();
+//    v2::echoClient();
+    v3::echoClient();
 
     info("exit client1 demo");
     return 0;
@@ -112,3 +113,60 @@ void echoClient(){
 }
 
 } // v2
+
+namespace v3{
+
+void echoClient(){
+    std::vector<int> vec;
+
+    for(int i = 0; i < 10; ++i){
+        int fd = raw_v1::getTcpSocket();
+        return_if(fd <= 0, "get_socket_fd_fail");
+        info("fd: %d", fd);
+
+        int ret = raw_v1::doConnect(fd, LOCAL_IP, PORT);
+        return_if(ret < 0, "connect_fail ret: %d, %s", ret, strerror(errno));
+        info("connect succ");
+
+        raw_v1::setNonBlock(fd);
+        vec.push_back(fd);
+    }
+
+    for(int i = 0; i < 10; ++i){
+        for(auto fd : vec){
+            string input = comm::util::util::format("%d_%d", fd, i);
+            int iWriteSize = raw_v1::doWrite(fd, input);
+            if(iWriteSize < 0){
+                warn("write fail: %d", iWriteSize);
+                break;
+            }
+
+            info("send : %s, size: %d to server", input.c_str(), iWriteSize);
+
+            string sData;
+            int iReadSize = raw_v1::doRead(fd, sData, 1024);
+            if(iReadSize > 0) {
+                info("get msg from fd: %d, size : %d, %s", fd, iReadSize, sData.c_str());
+            }else if(0 == iReadSize){
+                info("server has close");
+                break;
+            }else{
+                int error = errno;
+                if(EAGAIN == error or EWOULDBLOCK == error or EINTR == error){
+                    info("fd: %d no data...., ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
+                }else{
+                    error("fd: %d read fail close it, ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
+                    raw_v1::doClose(fd);
+                }
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(i * 10));
+        }
+
+        info("loop: %d", i);
+    }
+
+    info("exit");
+}
+
+} // v3
