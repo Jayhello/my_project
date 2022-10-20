@@ -186,7 +186,7 @@ protected:
         }
 
         info("now sleep wait...");
-        sleep(1);
+        sleep(1);         // sleep这么久, client发包快的话, 会导致粘包(两次请求的包, 这里一次收到)
     }
 
     std::set<int>  setFd_;
