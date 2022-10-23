@@ -32,3 +32,12 @@ namespace v3{
 void echoServer();
 
 } // v3
+
+// select example
+namespace v4{
+
+void selectExample();
+
+void selectServer();
+
+} // v4

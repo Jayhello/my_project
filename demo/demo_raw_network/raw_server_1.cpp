@@ -12,7 +12,8 @@ int main(int argc, char** argv){
 
 //    v1::echoServer();
 //    v2::echoServer();
-    v3::echoServer();
+//    v3::echoServer();
+    v4::selectExample();
 
     info("exit server1 demo");
     return 0;
@@ -225,3 +226,37 @@ void echoServer(){
 }
 
 } // v3
+
+namespace v4{
+
+void selectExample(){
+    fd_set fds;
+    FD_ZERO(&fds);
+    // 把标准输入的文件描述符 0 加入到集合中 (cin 0, cout 1, cerr 2)
+    FD_SET(0, &fds);
+
+    timeval tv;   // timeout 5.5 second
+    tv.tv_sec = 5;
+    tv.tv_usec = 500;
+
+    int ret = select(1, &fds, nullptr, nullptr, &tv); // block and wait 5.5s
+    if(ret < 0)
+        error("select error ret: %d", ret);
+    else if(ret == 0)
+        info("select timeout");
+    else{
+        string buf;
+        std::cin >> buf;
+        info("input bus: %s", buf.c_str());
+    }
+
+    info("ending.....");
+}
+
+void selectServer(){
+
+}
+
+
+} // v4
+
