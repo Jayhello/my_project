@@ -22,3 +22,10 @@ namespace v3{
 void echoClient();
 
 } // v3
+
+// 使用 select 示例
+namespace v4{
+
+void echoSelectClient();
+
+} // v4

@@ -67,7 +67,23 @@ int doRead(int fd, string& sData, size_t iReadSize){
         sData.assign(arr, read_bytes);
     }
 
-    return read_bytes;
+    return int(read_bytes);
+}
+
+// < 0 错误 , > 0 写的数据size  (这个write没有返回0的)
+int doSend(int fd, const string& sData){
+    return ::send(fd, sData.c_str(), sData.size(), 0);
+}
+
+// < 0 错误,  = 0 对方关闭了链接, > 0 写的数据size
+int doRecv(int fd, string& sData, size_t iReadSize){
+    char arr[1024]= {0};
+    ssize_t read_bytes = recv(fd, arr, iReadSize, 0);
+    if(read_bytes > 0){
+        sData.assign(arr, read_bytes);
+    }
+
+    return int(read_bytes);
 }
 
 int doClose(int fd){

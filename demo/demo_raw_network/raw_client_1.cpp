@@ -11,7 +11,8 @@ int main(int argc, char** argv){
 
 //    v1::echoClient();
 //    v2::echoClient();
-    v3::echoClient();
+//    v3::echoClient();
+    v4::echoSelectClient();
 
     info("exit client1 demo");
     return 0;
@@ -170,3 +171,69 @@ void echoClient(){
 }
 
 } // v3
+
+// 使用 select 示例
+namespace v4{
+
+void echoSelectClient(){
+    int fd = raw_v1::getTcpSocket();
+    return_if(fd <= 0, "get_socket_fd_fail");
+    info("fd: %d", fd);
+
+    int ret = raw_v1::doConnect(fd, LOCAL_IP, PORT);
+    //    return_if(ret < 0, "connect_fail ret: %d, %s", ret, strerror(ret));
+    return_if(ret < 0, "connect_fail ret: %d, %s", ret, strerror(errno));
+    info("connect succ");
+
+    fd_set   fds;
+    while(1){
+        FD_ZERO(&fds);
+
+        FD_SET(0, &fds);  // 把标准输入的文件描述符加入到集合中
+        FD_SET(fd, &fds);    // 把当前连接的文件描述符加入到集合中
+
+        timeval  tv {5, 100};
+        ret = select(fd + 1, &fds, NULL, NULL, &tv);
+        if(ret < 0){
+            int ge = errno;
+            error("select fail ret: %d, errno: %d, %s", ret, ge, strerror(ge));
+            break;
+        }else if(0 == ret){
+            info("select timeout, wait next");
+        }else{
+            if(FD_ISSET(fd, &fds)){
+                string sData;
+                int iReadSize = raw_v1::doRecv(fd, sData, 1024);
+                if(iReadSize > 0) {
+                    info("get msg from fd: %d, size : %d, %s", fd, iReadSize, sData.c_str());
+                }else{
+                    int ge = errno;
+                    error("server fail ret: %d, errno: %d, %s", ret, ge, strerror(ge));
+                    break;
+                }
+            }
+
+            if(FD_ISSET(0, &fds)){
+                string input;
+                std::cin >> input;
+                if(input[0] == 'q'){
+                    info("input q so break");
+                    break;
+                }
+
+                int iSendSize = raw_v1::doSend(fd, input);
+                if(iSendSize < 0){
+                    warn("send fail: %d", iSendSize);
+                    break;
+                }
+
+                info("send : %s, size: %d to server", input.c_str(), iSendSize);
+            }
+        }
+    }
+
+    raw_v1::doClose(fd);
+    info("client exit");
+}
+
+} // v4

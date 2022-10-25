@@ -13,7 +13,8 @@ int main(int argc, char** argv){
 //    v1::echoServer();
 //    v2::echoServer();
 //    v3::echoServer();
-    v4::selectExample();
+//    v4::selectExample();
+    v4::selectServer();
 
     info("exit server1 demo");
     return 0;
@@ -254,7 +255,77 @@ void selectExample(){
 }
 
 void selectServer(){
+    int fd = raw_v1::getTcpSocket();
+    return_if(fd <= 0, "get_socket_fd_fail");
+    info("fd: %d", fd);
 
+    int ret = raw_v1::doBind(fd, LOCAL_IP, PORT);
+    return_if(ret < 0, "bind fail: %d", ret);
+
+    ret = raw_v1::doListen(fd);
+    return_if(ret < 0, "listen fail: %d", ret);
+
+    fd_set   fds;
+    std::set<int> setClientFd;
+    int max_fd = fd;
+    while(1){
+        FD_ZERO(&fds);
+
+        FD_SET(fd, &fds);    // 把当前连接的文件描述符加入到集合中
+        for(auto cfd : setClientFd){
+            FD_SET(cfd, &fds);
+            max_fd = std::max(max_fd, cfd);
+        }
+
+        timeval  tv {5, 100};
+        ret = select(max_fd + 1, &fds, NULL, NULL, &tv);
+        if(ret < 0){
+            int ge = errno;
+            error("select fail ret: %d, errno: %d, %s", ret, ge, strerror(ge));
+            break;
+        }else if(0 == ret){
+            info("select timeout, wait next");
+        }else{
+            if(FD_ISSET(fd, &fds)){
+                string cIp;
+                int cPort = 0;
+                int cfd = raw_v1::doAccept(fd, cIp, cPort);
+                if(cfd <= 0){
+                    error("accept error: %d", cfd);
+                    break;
+                }
+
+                info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+                setClientFd.insert(cfd);
+            }
+
+            for(auto cfd : setClientFd){
+                if(FD_ISSET(cfd, &fds)){
+                    string sData;
+                    int iReadSize = raw_v1::doRead(cfd, sData, 1024);
+                    if(iReadSize > 0) {
+                        info("get msg from fd: %d, size: %d, %s", cfd, iReadSize, sData.c_str());
+                        int iWriteSize = raw_v1::doWrite(cfd, sData);
+                        if (iWriteSize < 0) {
+                            error("fd: %d write fail close it", cfd);
+                            raw_v1::doClose(cfd);
+                            setClientFd.erase(cfd);
+                            break;
+                        }
+                        info("echo back size: %d, %s", iWriteSize, sData.c_str());
+                    }else{
+                        info("fd: %d has close", cfd);
+                        raw_v1::doClose(cfd);
+                        setClientFd.erase(cfd);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    info("exit");
+    raw_v1::doClose(fd);
 }
 
 

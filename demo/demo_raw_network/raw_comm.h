@@ -50,6 +50,12 @@ int doWrite(int fd, const string& sData);
 // < 0 错误,  = 0 对方关闭了链接, > 0 写的数据size
 int doRead(int fd, string& sData, size_t iReadSize);
 
+// < 0 错误 , > 0 写的数据size  (这个write没有返回0的)
+int doSend(int fd, const string& sData);
+
+// < 0 错误,  = 0 对方关闭了链接, > 0 写的数据size
+int doRecv(int fd, string& sData, size_t iReadSize);
+
 int doClose(int fd);
 
 int setNonBlock(int fd, bool value = true);
