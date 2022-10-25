@@ -11,8 +11,8 @@ int main(int argc, char** argv){
 
 //    v1::echoClient();
 //    v2::echoClient();
-//    v3::echoClient();
-    v4::echoSelectClient();
+    v3::echoClient();
+//    v4::echoSelectClient();
 
     info("exit client1 demo");
     return 0;

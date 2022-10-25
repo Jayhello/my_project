@@ -277,6 +277,7 @@ void selectServer(){
             max_fd = std::max(max_fd, cfd);
         }
 
+        info("select fds size: %d", int(setClientFd.size()));
         timeval  tv {5, 100};
         ret = select(max_fd + 1, &fds, NULL, NULL, &tv);
         if(ret < 0){
