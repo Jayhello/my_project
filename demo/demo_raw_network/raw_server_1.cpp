@@ -14,7 +14,8 @@ int main(int argc, char** argv){
 //    v2::echoServer();
 //    v3::echoServer();
 //    v4::selectExample();
-    v4::selectServer();
+//    v4::selectServer();
+    v5::epollServer();
 
     info("exit server1 demo");
     return 0;
@@ -332,3 +333,106 @@ void selectServer(){
 
 } // v4
 
+// epoll example
+namespace v5{
+
+// https://juejin.cn/post/6936836371352911902
+
+void epollServer(){
+    const int EVENTS_SIZE = 20;
+
+    int socketFd = raw_v1::getTcpSocket();
+    return_if(socketFd <= 0, "get_socket_fd_fail");
+    info("fd: %d", socketFd);
+
+    int ret = raw_v1::doBind(socketFd, LOCAL_IP, PORT);
+    return_if(ret < 0, "bind fail: %d", ret);
+
+    ret = raw_v1::doListen(socketFd);
+    return_if(ret < 0, "listen fail: %d", ret);
+
+    //创建一个epoll,size已经不起作用了,一般填1就好了
+    int eFd = epoll_create(1);
+
+    //把socket包装成一个epoll_event对象
+    //并添加到epoll中
+    epoll_event epev{};
+    epev.events = EPOLLIN;//可以响应的事件,这里只响应可读就可以了
+    epev.data.fd = socketFd;//socket的文件描述符
+    epoll_ctl(eFd, EPOLL_CTL_ADD, socketFd, &epev);//添加到epoll中
+
+    //回调事件的数组,当epoll中有响应事件时,通过这个数组返回
+    epoll_event events[EVENTS_SIZE];
+
+    //整个epoll_wait 处理都要在一个死循环中处理
+    while (true) {
+        //这个函数会阻塞,直到超时或者有响应事件发生
+        int eNum = epoll_wait(eFd, events, EVENTS_SIZE, 5);
+        return_if(ret < 0, "epoll_wait fail: %d", ret);
+
+        //遍历所有的事件
+        for (int i = 0; i < eNum; i++) {
+            //判断这次是不是socket可读(是不是有新的连接)
+            if (events[i].data.fd == socketFd) {
+                if (events[i].events & EPOLLIN) {
+                    string cIp;
+                    int cPort = 0;
+                    int cfd = raw_v1::doAccept(socketFd, cIp, cPort);
+
+                    if (cfd > 0) {
+                        //设置响应事件,设置可读和边缘(ET)模式
+                        //很多人会把可写事件(EPOLLOUT)也注册了,后面会解释
+                        epev.events = EPOLLIN | EPOLLET;
+                        epev.data.fd = cfd;
+                        //设置连接为非阻塞模式
+                        raw_v1::setNonBlock(cfd);
+                        //将新的连接添加到epoll中
+                        epoll_ctl(eFd, EPOLL_CTL_ADD, cfd, &epev);
+                        info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+                    }
+                }
+            } else {//不是socket的响应事件
+                //判断是不是断开和连接出错
+                //因为连接断开和出错时,也会响应`EPOLLIN`事件
+                if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP) {
+                    //出错时,从epoll中删除对应的连接
+                    epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+                    info("fd: %d has close", events[i].data.fd);
+                    raw_v1::doClose(events[i].data.fd);
+                } else if (events[i].events & EPOLLIN) {//如果是可读事件
+                    string sData;
+                    int iReadSize = raw_v1::doRead(events[i].data.fd, sData, 1024);
+                    if(iReadSize > 0) {
+                        info("get msg from fd: %d, size: %d, %s", events[i].data.fd, iReadSize, sData.c_str());
+                        int iWriteSize = raw_v1::doWrite(events[i].data.fd, sData);
+                        if (iWriteSize < 0) {
+                            error("fd: %d write fail close it", events[i].data.fd);
+                            raw_v1::doClose(events[i].data.fd);
+                            break;
+                        }
+                        info("echo back size: %d, %s", iWriteSize, sData.c_str());
+                    }else if(0 == iReadSize){
+                        info("fd: %d has close", events[i].data.fd);
+                        raw_v1::doClose(events[i].data.fd);
+                        epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+                        break;
+                    }else{
+                        int error = errno;
+                        if(EAGAIN == error or EWOULDBLOCK == error or EINTR == error){
+                            info("fd: %d no data...., ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                        }else{
+                            error("fd: %d read fail close it, ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                            raw_v1::doClose(events[i].data.fd);
+                            epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    raw_v1::doClose(socketFd);
+    info("exit");
+}
+
+} // v5

@@ -41,3 +41,10 @@ void selectExample();
 void selectServer();
 
 } // v4
+
+// epoll example
+namespace v5{
+
+void epollServer();
+
+} // v5

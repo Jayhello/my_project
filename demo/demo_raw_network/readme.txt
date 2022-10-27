@@ -18,3 +18,12 @@ https://developer.aliyun.com/article/751558
 https://zhuanlan.zhihu.com/p/535405145
 
 https://cloud.tencent.com/developer/article/1008803
+
+todo
+https://github.com/linyacool/WebServer/blob/master/%E8%BF%9E%E6%8E%A5%E7%9A%84%E7%BB%B4%E6%8A%A4.md
+
+请你实现一个大文件上传和断点续传
+https://juejin.cn/post/6844904046436843527#heading-10
+
+TCP 的 Keepalive 和 HTTP 的 Keep-Alive 是一个东西吗？
+https://juejin.cn/post/7129774792911093773
