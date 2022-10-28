@@ -385,7 +385,7 @@ void epollServer(){
                         epev.events = EPOLLIN | EPOLLET;
                         epev.data.fd = cfd;
                         //设置连接为非阻塞模式
-                        raw_v1::setNonBlock(cfd);
+                        raw_v1::setNonBlock(cfd);  // 依然要设置为非阻塞(不然后面的while read 循环那里会被阻塞)
                         //将新的连接添加到epoll中
                         epoll_ctl(eFd, EPOLL_CTL_ADD, cfd, &epev);
                         info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
