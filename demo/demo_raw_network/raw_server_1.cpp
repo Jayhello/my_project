@@ -504,8 +504,8 @@ int EventLoopServer::init(){
     int ret = raw_v1::doBind(sfd_, sIp_, port_);
     RETURN_IF(ret < 0, "bind_fail", ret);
 
-//    ret = raw_v1::setNonBlock(sfd_);
-//    Log << "set_no_block_ret" << ret;
+    ret = raw_v1::setNonBlock(sfd_);
+    Log << "set_no_block_ret" << ret;
 
     ret = raw_v1::setReuseAddr(sfd_);
     Log << "set_readdr_ret" << ret;
