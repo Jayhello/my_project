@@ -25,6 +25,7 @@ using std::cin;
 using std::endl;
 using namespace comm;
 using namespace comm::log;
+using log_v1::ScopeLog;
 
 #define LOCAL_IP    "127.0.0.1"
 #define PORT        8880

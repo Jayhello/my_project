@@ -5,6 +5,7 @@
 #include "raw_server_1.h"
 #include "raw_comm.h"
 #include <set>
+#include <unordered_map>
 
 int main(int argc, char** argv){
     Logger::getLogger().setLogLevel(Logger::LINFO);
@@ -15,7 +16,8 @@ int main(int argc, char** argv){
 //    v3::echoServer();
 //    v4::selectExample();
 //    v4::selectServer();
-    v5::epollServer();
+//    v5::epollServer();
+    v6::epollWarpServer();
 
     info("exit server1 demo");
     return 0;
@@ -436,3 +438,190 @@ void epollServer(){
 }
 
 } // v5
+
+
+// epoll 简单的封装为比较通用的 server
+namespace v6{
+
+struct EndPoint{
+    int fd;
+    string sip;
+    int port;
+    string toString()const{
+        return comm::util::util::format("ip:%s,port:%d,fd:%d", sip.c_str(), port, fd);
+    }
+};
+
+class EventLoopServer : noncopyable{
+public:
+    explicit EventLoopServer(const string& ip, int port):sIp_(ip), port_(port){}
+
+    ~EventLoopServer();
+
+    int init();
+
+    int loop();
+
+protected:
+    virtual int onClose(const EndPoint& ep);
+
+    virtual int onRead(const EndPoint& ep, const string& sData);
+
+    virtual int onConnect(int cfd, const string& ip, int port);
+protected:
+    string sIp_;
+    int port_;
+    int sfd_ = -1;
+    int efd_ = -1;
+    std::unordered_map<int, EndPoint> mFdEndPoint_;  // 先简单点不加锁
+};
+
+void epollWarpServer(){
+    EventLoopServer server(LOCAL_IP, PORT);
+    int ret = server.init();
+    return_if(ret < 0, "init_fail_ret: %d", ret);
+
+    info("start loop");
+    server.loop();
+    info("exit");
+}
+
+EventLoopServer::~EventLoopServer(){
+    if(sfd_ > 0){
+        int ret = raw_v1::doClose(sfd_);
+        info("server exit ip: %s, port: %d, fd: %d, close_ret: %d", sIp_.c_str(), port_, sfd_, ret);
+    }
+}
+
+int EventLoopServer::init(){
+    ScopeLog Log;
+    Log << "init ip:" << sIp_ << "port:" << port_;
+
+    sfd_ = raw_v1::getTcpSocket();
+    RETURN_IF(sfd_ <= 0, "get_socket_fd_fail", -1);
+    Log << "sfd:" << sfd_;
+
+    int ret = raw_v1::doBind(sfd_, sIp_, port_);
+    RETURN_IF(ret < 0, "bind_fail", ret);
+
+//    ret = raw_v1::setNonBlock(sfd_);
+//    Log << "set_no_block_ret" << ret;
+
+    ret = raw_v1::setReuseAddr(sfd_);
+    Log << "set_readdr_ret" << ret;
+
+    ret = raw_v1::setReusePort(sfd_);
+    Log << "set_report_ret" << ret;
+
+    ret = raw_v1::doListen(sfd_);
+    RETURN_IF(ret < 0, "listen fail", ret);
+
+    Log << "init_succ";
+
+    return 0;
+}
+
+int EventLoopServer::loop(){
+    efd_ = epoll_create(1);
+    info("epoll_fd: %d", efd_);
+
+    epoll_event epev{};
+    epev.events = EPOLLIN;//可以响应的事件,这里只响应可读就可以了
+    epev.data.fd = sfd_;//socket的文件描述符
+    epoll_ctl(efd_, EPOLL_CTL_ADD, sfd_, &epev);//添加到epoll中
+
+    //回调事件的数组,当epoll中有响应事件时,通过这个数组返回
+    const static int SIZE = 100;
+    epoll_event events[SIZE];
+    while(1){
+        int num = epoll_wait(efd_, events, SIZE, 5000);
+        return_ret_if(num < 0, num, "epoll_wait_fail_ret: %d", num);
+
+        if(0 == num){
+            info("epoll_wait_next_loop");
+            continue;
+        }else{
+            for(int i = 0; i < num; ++i){
+                if(events[i].data.fd == sfd_){
+                    string ip;
+                    int port = 0;
+                    int cfd = raw_v1::doAccept(sfd_, ip, port);
+                     if(cfd > 0){
+                         onConnect(cfd, ip, port);
+                     }
+                }else{
+                    if (events[i].events & EPOLLERR || events[i].events & EPOLLHUP){
+                        onClose(mFdEndPoint_[events[i].data.fd]);
+                    }else if (events[i].events & EPOLLIN) {//如果是可读事件
+                        string sData;
+                        int iReadSize = raw_v1::doRead(events[i].data.fd, sData, 1024);
+                        if(iReadSize > 0) {
+                            onRead(mFdEndPoint_[events[i].data.fd], sData);
+                        } else if(iReadSize == 0){
+                            onClose(mFdEndPoint_[events[i].data.fd]);
+                        }else{
+                            int error = errno;
+                            if(EAGAIN == error or EWOULDBLOCK == error or EINTR == error){
+                                info("fd: %d no data...., ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                            }else{
+                                error("fd: %d read fail close it, ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                                raw_v1::doClose(events[i].data.fd);
+                                onClose(mFdEndPoint_[events[i].data.fd]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
+int EventLoopServer::onConnect(int cfd, const string& ip, int port){
+    raw_v1::setNonBlock(cfd);  // 依然要设置为非阻塞(不然后面的while read 循环那里会被阻塞)
+
+    epoll_event epev{};
+    epev.events = EPOLLIN;//可以响应的事件,这里只响应可读就可以了
+    epev.data.fd = cfd;//socket的文件描述符
+    epoll_ctl(efd_, EPOLL_CTL_ADD, cfd, &epev);//添加到epoll中
+    info("accept new client fd: %d, ip: %s, port: %d", cfd, ip.c_str(), port);
+
+    EndPoint ep{cfd, ip, port};
+    mFdEndPoint_[cfd] = ep;
+
+    return 0;
+}
+
+int EventLoopServer::onClose(const EndPoint& ep){
+    ScopeLog Log;
+    Log << "close" << ep.toString();
+
+    int ret = epoll_ctl(efd_, EPOLL_CTL_DEL, ep.fd, nullptr);
+    Log << "epoll_ctl_del_ret" << ret;
+
+    ret = raw_v1::doClose(ep.fd);
+    Log << "close_ret" << ret;
+
+    mFdEndPoint_.erase(ep.fd);
+
+    return 0;
+}
+
+int EventLoopServer::onRead(const EndPoint& ep, const string& sData){
+    ScopeLog Log;
+    Log << "on_read_ep" << ep.toString() << "msg" << sData;
+
+    int iWriteSize = raw_v1::doWrite(ep.fd, sData);
+    if (iWriteSize < 0) {
+        Log << "write_fail_ret" << iWriteSize;
+        onClose(ep);
+        return -1;
+    }
+
+    Log << "write_size" << iWriteSize;
+
+    return 0;
+}
+
+}// v6

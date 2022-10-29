@@ -48,3 +48,10 @@ namespace v5{
 void epollServer();
 
 } // v5
+
+// epoll 简单的封装为比较通用的 server
+namespace v6{
+
+void epollWarpServer();
+
+}// v6

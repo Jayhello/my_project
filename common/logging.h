@@ -4,6 +4,7 @@
 
 #pragma once
 #include <stdio.h>
+#include <sstream>
 #include <atomic>
 #include <string>
 #include "util.h"
@@ -70,6 +71,14 @@
         }                                      \
     } while (0)
 
+#define RETURN_IF(b, msg, ret)                 \
+    do {                                       \
+        if ((b)) {                             \
+            Log << msg;                        \
+            return ret;                        \
+        }                                      \
+    } while (0)
+
 #define setloglevel(l) Logger::getLogger().setLogLevel(l)
 #define setlogfile(n) Logger::getLogger().setFileName(n)
 
@@ -109,3 +118,36 @@ private:
 
 } // log
 } // comm
+
+namespace log_v1{
+using namespace::comm::log;
+
+class ScopeLog{
+public:
+    ~ScopeLog(){
+        if(not cancel_){
+            info("%s", ss_.str().c_str());
+        }
+    }
+
+    template<typename T>
+    std::ostream& operator << (const T& v){
+        ss_ << v << sep_;
+        return ss_;
+    }
+
+    void setSep(const std::string& sep){
+        sep_ = sep;
+    }
+
+    void cancel(){
+        cancel_ = true;
+    }
+
+protected:
+    std::string sep_ = " ";
+    bool cancel_ = false;
+    std::stringstream ss_;
+};
+
+} // log_v1
