@@ -45,3 +45,7 @@ https://zhuanlan.zhihu.com/p/37081073
 
 深入剖析Linux IO原理和几种零拷贝机制的实现
 https://zhuanlan.zhihu.com/p/83398714
+
+https://blog.csdn.net/wangcg123/article/details/54928366
+现在 epoll 单机（4G内存）并发量最大能达到多少？
+https://www.zhihu.com/question/30772664
