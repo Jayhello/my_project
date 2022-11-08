@@ -49,3 +49,9 @@ https://zhuanlan.zhihu.com/p/83398714
 https://blog.csdn.net/wangcg123/article/details/54928366
 现在 epoll 单机（4G内存）并发量最大能达到多少？
 https://www.zhihu.com/question/30772664
+
+HTTP 请求头中的 X-Forwarded-For - 掘金
+HTTP 代理原理及实现（二） | JerryQu 的小站
+https://www.one-tab.com/page/2wjAgujOSrmEhV44DKHStw
+
+关于伪造ip的可行性 - 腾讯云开发者社区-腾讯云
