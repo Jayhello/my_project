@@ -2,7 +2,9 @@
 // Created by Administrator on 2022/10/9.
 //
 #pragma once
-
+#include <vector>
+#include <memory>
+#include <sys/epoll.h>//epoll
 
 // 原始的 socket 实现的echo server
 namespace v1{
@@ -55,3 +57,38 @@ namespace v6{
 void epollWarpServer();
 
 }// v6
+
+namespace day05{
+
+class Channel;
+
+using ChannelPtr     = std::shared_ptr<Channel>;
+using ChannelPtrList = std::vector<ChannelPtr>;
+
+class Epoll{
+public:
+    Epoll();
+
+    ~Epoll();
+
+    int init();
+
+    ChannelPtrList poll(int timeout = -1);
+    const static int MAX_EVENTS = 100;
+
+private:
+    int    epfd_;
+    struct epoll_event* events_;
+};
+
+class Channel{
+public:
+    Channel(Epoll* ep, int fd);
+
+private:
+    Epoll* ep_;
+    int fd_;
+    int events_;
+};
+
+} // day05

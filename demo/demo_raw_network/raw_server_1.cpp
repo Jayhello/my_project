@@ -402,30 +402,37 @@ void epollServer(){
                     info("fd: %d has close", events[i].data.fd);
                     raw_v1::doClose(events[i].data.fd);
                 } else if (events[i].events & EPOLLIN) {//如果是可读事件
-                    string sData;
-                    int iReadSize = raw_v1::doRead(events[i].data.fd, sData, 1024);
-                    if(iReadSize > 0) {
-                        info("get msg from fd: %d, size: %d, %s", events[i].data.fd, iReadSize, sData.c_str());
-                        int iWriteSize = raw_v1::doWrite(events[i].data.fd, sData);
-                        if (iWriteSize < 0) {
-                            error("fd: %d write fail close it", events[i].data.fd);
-                            raw_v1::doClose(events[i].data.fd);
-                            break;
-                        }
-                        info("echo back size: %d, %s", iWriteSize, sData.c_str());
-                    }else if(0 == iReadSize){
-                        info("fd: %d has close", events[i].data.fd);
-                        raw_v1::doClose(events[i].data.fd);
-                        epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
-                        break;
-                    }else{
-                        int error = errno;
-                        if(EAGAIN == error or EWOULDBLOCK == error or EINTR == error){
-                            info("fd: %d no data...., ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
-                        }else{
-                            error("fd: %d read fail close it, ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                    while(true){  //由于使用非阻塞IO，读取客户端buffer，一次读取buf大小数据，直到全部读取完毕
+                        string sData;
+                        int iReadSize = raw_v1::doRead(events[i].data.fd, sData, 1024);
+                        if(iReadSize > 0) {
+                            info("get msg from fd: %d, size: %d, %s", events[i].data.fd, iReadSize, sData.c_str());
+                            int iWriteSize = raw_v1::doWrite(events[i].data.fd, sData);
+                            if (iWriteSize < 0) {
+                                error("fd: %d write fail close it", events[i].data.fd);
+                                raw_v1::doClose(events[i].data.fd);
+                                break;
+                            }
+                            info("echo back size: %d, %s", iWriteSize, sData.c_str());
+                        }else if(0 == iReadSize){  //EOF，客户端断开连接
+                            info("fd: %d has close", events[i].data.fd);
                             raw_v1::doClose(events[i].data.fd);
                             epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+                            break;
+                        }else{  // -1
+                            int error = errno;
+                            if(EAGAIN == error or EWOULDBLOCK == error){  //非阻塞IO，这个条件表示数据全部读取完毕
+                                info("fd: %d no data...., ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                                break;
+                            }else if(EINTR == error){  //客户端正常中断、继续读取
+                                info("fd: %d continue reading...., ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                                continue;
+                            }else{
+                                error("fd: %d read fail close it, ret: %d error: %d, %s", events[i].data.fd, iReadSize, error, strerror(error));
+                                raw_v1::doClose(events[i].data.fd);
+                                epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+                                break;
+                            }
                         }
                     }
                 }
@@ -620,8 +627,36 @@ int EventLoopServer::onRead(const EndPoint& ep, const string& sData){
     }
 
     Log << "write_size" << iWriteSize;
-
     return 0;
 }
 
 }// v6
+
+namespace day05{
+
+Epoll::Epoll():epfd_(-1), events_(nullptr){
+}
+
+Epoll::~Epoll(){
+    if(epfd_ > 0){
+        close(epfd_);
+        epfd_ = -1;
+    }
+    delete[] events_;
+}
+
+int Epoll::init(){
+    epfd_ = epoll_create(1);
+    if(epfd_ < 0) return -1;
+
+    events_ = new epoll_event[MAX_EVENTS];
+    bzero(events_, sizeof(*events_) * MAX_EVENTS);
+}
+
+std::vector<Channel*> Epoll::poll(int timeout){
+    int size = epoll_wait(epfd_, events_, MAX_EVENTS, timeout);
+
+
+}
+
+} // day05

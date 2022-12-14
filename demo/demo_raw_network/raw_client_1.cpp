@@ -120,7 +120,7 @@ namespace v3{
 void echoClient(){
     std::vector<int> vec;
 
-    for(int i = 0; i < 10; ++i){
+    for(int i = 0; i < 100000; ++i){
         int fd = raw_v1::getTcpSocket();
         return_if(fd <= 0, "get_socket_fd_fail");
         info("fd: %d", fd);

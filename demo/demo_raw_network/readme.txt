@@ -1,4 +1,3 @@
-
 原始的 socket 函数写的网络demo, 通过这些原始的编程, 更好的了解如何封装网络库
 
 https://github.com/yuesong-feng/30dayMakeCppServer
@@ -28,14 +27,11 @@ https://juejin.cn/post/6844904046436843527#heading-10
 TCP 的 Keepalive 和 HTTP 的 Keep-Alive 是一个东西吗？
 https://juejin.cn/post/7129774792911093773
 
-epoll内核源码分析
+epoll内核源码分析   (先不看了)
 https://www.jianshu.com/p/aa486512e989
 
 从小白到架构师(3): 揭开分布式数据库的面纱
 https://www.cnblogs.com/Finley/p/16827147.html
-
-什么是 Event Loop？
-https://www.ruanyifeng.com/blog/2013/10/event_loop.html
 
 基于腾讯云的WebSocket原理探索与实践
 https://zhuanlan.zhihu.com/p/200816740
@@ -46,12 +42,11 @@ https://zhuanlan.zhihu.com/p/37081073
 深入剖析Linux IO原理和几种零拷贝机制的实现
 https://zhuanlan.zhihu.com/p/83398714
 
-https://blog.csdn.net/wangcg123/article/details/54928366
-现在 epoll 单机（4G内存）并发量最大能达到多少？
-https://www.zhihu.com/question/30772664
-
 HTTP 请求头中的 X-Forwarded-For - 掘金
 HTTP 代理原理及实现（二） | JerryQu 的小站
 https://www.one-tab.com/page/2wjAgujOSrmEhV44DKHStw
 
 关于伪造ip的可行性 - 腾讯云开发者社区-腾讯云
+
+开发内功修炼 (后面有空也可以看下)
+https://github.com/yanfeizhang/coder-kung-fu
