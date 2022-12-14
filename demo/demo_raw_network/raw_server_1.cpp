@@ -653,9 +653,21 @@ int Epoll::init(){
     bzero(events_, sizeof(*events_) * MAX_EVENTS);
 }
 
-std::vector<Channel*> Epoll::poll(int timeout){
+ChannelPtrList Epoll::poll(int timeout){
     int size = epoll_wait(epfd_, events_, MAX_EVENTS, timeout);
 
+}
+
+void day05_example(){
+    int sfd = raw_v1::createTcpServerSocket(LOCAL_IP, PORT);
+    return_if(sfd <= 0, "get_server_fd_fail");
+    info("fd: %d", sfd);
+
+    Epoll tEp;
+    int ret = tEp.init();
+    return_if(ret < 0, "epoll_init_fail");
+
+    ChannelPtr sSc = std::make_shared<Channel>(&tEp, sfd);
 
 }
 

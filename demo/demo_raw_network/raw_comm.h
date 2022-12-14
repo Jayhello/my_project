@@ -45,6 +45,9 @@ int doListen(int fd, int n = SOMAXCONN);
 
 int doAccept(int fd, string& sIp, int& iPort);
 
+// create, bind, listen, ret > 0 succ
+int createTcpServerSocket(const string& sIp, int iPort);
+
 // < 0 错误 , > 0 写的数据size  (这个write没有返回0的)
 // todo read 这里的参数 sData 是否可以优化下, const char* str, len
 int doWrite(int fd, const string& sData);

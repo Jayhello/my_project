@@ -83,12 +83,16 @@ private:
 
 class Channel{
 public:
-    Channel(Epoll* ep, int fd);
+    Channel(Epoll* ep, int fd):ep_(ep), fd_(fd){}
 
+    void enableRead();
 private:
     Epoll* ep_;
     int fd_;
-    int events_;
+    int events_ = 0;
+    bool bAdd_ = false;
 };
+
+void day05_example();
 
 } // day05

@@ -38,6 +38,21 @@ int doListen(int fd, int n){
     return ::listen(fd, n);
 }
 
+int createTcpServerSocket(const string& sIp, int iPort){
+    int socketFd = getTcpSocket();
+    if(socketFd < 0) return -1;
+
+    setReuseAddr(socketFd);
+    setReusePort(socketFd);
+
+    int ret = raw_v1::doBind(socketFd, sIp, iPort);
+    if(ret < 0)return -2;
+
+    ret = doListen(socketFd);
+    if(ret < 0) return -3;
+    return socketFd;
+}
+
 int doAccept(int fd, string& sIp, int& iPort){
     struct sockaddr_in clnt_addr;
     socklen_t clnt_addr_len = sizeof(clnt_addr);
