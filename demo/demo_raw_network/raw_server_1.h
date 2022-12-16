@@ -62,7 +62,8 @@ namespace day05{
 
 class Channel;
 
-using ChannelPtr     = std::shared_ptr<Channel>;
+//using ChannelPtr     = std::shared_ptr<Channel>;  // 这里不适合用shared_ptr
+using ChannelPtr     = Channel*;
 using ChannelPtrList = std::vector<ChannelPtr>;
 
 class Epoll{
@@ -73,9 +74,11 @@ public:
 
     int init();
 
-    ChannelPtrList poll(int timeout = -1);
+    int poll(ChannelPtrList& vList, int timeout = -1);
+
     const static int MAX_EVENTS = 100;
 
+    void updateEvent(Channel* ptr);
 private:
     int    epfd_;
     struct epoll_event* events_;
@@ -86,10 +89,20 @@ public:
     Channel(Epoll* ep, int fd):ep_(ep), fd_(fd){}
 
     void enableRead();
+
+    bool hasAdd()const{
+        return bAdd_;
+    }
+    int getFd()const{
+        return fd_;
+    }
+    int getEvent()const{
+        return events_;
+    }
 private:
     Epoll* ep_;
     int fd_;
-    int events_ = 0;
+    int events_ = EPOLLET;
     bool bAdd_ = false;
 };
 

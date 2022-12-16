@@ -653,9 +653,32 @@ int Epoll::init(){
     bzero(events_, sizeof(*events_) * MAX_EVENTS);
 }
 
-ChannelPtrList Epoll::poll(int timeout){
-    int size = epoll_wait(epfd_, events_, MAX_EVENTS, timeout);
+int Epoll::poll(ChannelPtrList& vList, int timeout){
+    int num = epoll_wait(epfd_, events_, MAX_EVENTS, timeout);
+    return_ret_if(num < 0, num, "epoll_wait_fail");
 
+
+    return 0;
+}
+
+
+void Epoll::updateEvent(Channel* ptr){
+    epoll_event epev{};
+    epev.events = ptr->getEvent();//可以响应的事件,这里只响应可读就可以了
+    epev.data.fd = ptr->getFd();//socket的文件描述符
+    epev.data.ptr = ptr;
+
+    if(ptr->hasAdd()){
+        epoll_ctl(epfd_, EPOLL_CTL_MOD, ptr->getFd(), &epev);
+    }else{
+        epoll_ctl(epfd_, EPOLL_CTL_ADD, ptr->getFd(), &epev);
+    }
+}
+
+void Channel::enableRead(){
+    events_ |= EPOLLIN;
+    ep_->updateEvent(this);  // 这里不好传shared_ptr
+    bAdd_ = true;
 }
 
 void day05_example(){
