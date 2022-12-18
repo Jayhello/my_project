@@ -120,7 +120,7 @@ namespace v3{
 void echoClient(){
     std::vector<int> vec;
 
-    for(int i = 0; i < 100000; ++i){
+    for(int i = 0; i < 10; ++i){
         int fd = raw_v1::getTcpSocket();
         return_if(fd <= 0, "get_socket_fd_fail");
         info("fd: %d", fd);
@@ -153,8 +153,11 @@ void echoClient(){
                 break;
             }else{
                 int error = errno;
-                if(EAGAIN == error or EWOULDBLOCK == error or EINTR == error){
+                if(EINTR == error){
                     info("fd: %d no data...., ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
+                }else if(EAGAIN == error or EWOULDBLOCK == error){
+//                    raw_v1::doClose(fd);
+//                    break;
                 }else{
                     error("fd: %d read fail close it, ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
                     raw_v1::doClose(fd);

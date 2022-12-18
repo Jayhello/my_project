@@ -99,13 +99,25 @@ public:
     int getEvent()const{
         return events_;
     }
+
+    void setEpEvent(int events){
+        ep_events_ = events;
+    }
+
+    int getEpEvents()const{
+        return ep_events_;
+    }
+
 private:
     Epoll* ep_;
     int fd_;
     int events_ = EPOLLET;
     bool bAdd_ = false;
+    int  ep_events_;
 };
 
 void day05_example();
+
+void handleRead(int fd);
 
 } // day05

@@ -17,7 +17,9 @@ int main(int argc, char** argv){
 //    v4::selectExample();
 //    v4::selectServer();
 //    v5::epollServer();
-    v6::epollWarpServer();
+//    v6::epollWarpServer();
+
+    day05::day05_example();
 
     info("exit server1 demo");
     return 0;
@@ -642,6 +644,7 @@ Epoll::~Epoll(){
         close(epfd_);
         epfd_ = -1;
     }
+
     delete[] events_;
 }
 
@@ -657,10 +660,14 @@ int Epoll::poll(ChannelPtrList& vList, int timeout){
     int num = epoll_wait(epfd_, events_, MAX_EVENTS, timeout);
     return_ret_if(num < 0, num, "epoll_wait_fail");
 
+    for(int i = 0; i < num; ++i){
+        auto ptr = ChannelPtr(events_[i].data.ptr);
+        ptr->setEpEvent(events_[i].events);
+        vList.push_back(ptr);
+    }
 
     return 0;
 }
-
 
 void Epoll::updateEvent(Channel* ptr){
     epoll_event epev{};
@@ -690,8 +697,63 @@ void day05_example(){
     int ret = tEp.init();
     return_if(ret < 0, "epoll_init_fail");
 
-    ChannelPtr sSc = std::make_shared<Channel>(&tEp, sfd);
+//    ChannelPtr sSc = std::make_shared<Channel>(&tEp, sfd);
+    ChannelPtr pSc = new Channel(&tEp, sfd);
+    pSc->enableRead();
 
+    while(true){
+        ChannelPtrList vList;
+        tEp.poll(vList, 1);
+        for(auto ptr : vList){
+            if(ptr->getFd() == sfd){
+                if(ptr->getEpEvents() & EPOLLIN){
+                    string cIp;
+                    int cPort = 0;
+                    int cfd = raw_v1::doAccept(sfd, cIp, cPort);
+                    if (cfd < 0)continue;
+                    raw_v1::setNonBlock(cfd);
+                    ChannelPtr pc = new Channel(&tEp, cfd);
+                    pc->enableRead();
+                    info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+                }
+            }else{
+                handleRead(ptr->getFd());
+            }
+        }
+    }
+}
+
+void handleRead(int fd){
+    while(true) {  //由于使用非阻塞IO，读取客户端buffer，一次读取buf大小数据，直到全部读取完毕
+        string sData;
+        int iReadSize = raw_v1::doRead(fd, sData, 1024);
+        if (iReadSize > 0) {
+            info("get msg from fd: %d, size: %d, %s", fd, iReadSize, sData.c_str());
+            int iWriteSize = raw_v1::doWrite(fd, sData);  // < 0 简洁点去掉
+            info("echo back size: %d, %s", iWriteSize, sData.c_str());
+        } else if (0 == iReadSize) {  //EOF，客户端断开连接
+            info("fd: %d has close", fd);
+            raw_v1::doClose(fd);
+//            epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+            break;
+        } else {  // -1
+            int error = errno;
+            if (EAGAIN == error or EWOULDBLOCK == error) {  //非阻塞IO，这个条件表示数据全部读取完毕
+                info("fd: %d no data...., ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
+                break;
+            } else if (EINTR == error) {  //客户端正常中断、继续读取
+                info("fd: %d continue reading...., ret: %d error: %d, %s", fd, iReadSize, error,
+                     strerror(error));
+                continue;
+            } else {
+                error("fd: %d read fail close it, ret: %d error: %d, %s", fd, iReadSize, error,
+                      strerror(error));
+                raw_v1::doClose(fd);
+//                epoll_ctl(eFd, EPOLL_CTL_DEL, fd, nullptr);
+                break;
+            }
+        }
+    }
 }
 
 } // day05
