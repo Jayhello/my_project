@@ -757,3 +757,58 @@ void handleRead(int fd){
 }
 
 } // day05
+
+namespace day06{
+
+Epoll::~Epoll(){
+    if(epfd_ > 0){
+        close(epfd_);
+        epfd_ = -1;
+    }
+
+    if(events_){
+        delete[] events_;
+        events_ = nullptr;
+    }
+}
+
+int Epoll::init(){
+    epfd_ = epoll_create(1);
+    if(epfd_ < 0) return -1;
+
+    events_ = new epoll_event[MAX_EVENTS];
+    bzero(events_, sizeof(*events_) * MAX_EVENTS);
+}
+
+void Epoll::updateChannel(ChannelPtr pc){
+    struct epoll_event epev;
+    epev.events = pc->getEvent();
+    epev.data.fd = pc->getFd();
+    epev.data.ptr = pc;
+    if(pc->inEpoll()){
+        epoll_ctl(epfd_, EPOLL_CTL_ADD, pc->getFd(), &epev);
+    }else{
+        epoll_ctl(epfd_, EPOLL_CTL_ADD, pc->getFd(), &epev);
+    }
+}
+
+int Epoll::poll(ChannelPtrList& vList, int timeout){
+    int num = epoll_wait(epfd_, events_, MAX_EVENTS, timeout);
+    return_ret_if(num < 0, num, "epoll_wait_fail");
+
+    for(int i = 0; i < num; ++i){
+        auto ptr = ChannelPtr(events_[i].data.ptr);
+        ptr->setEpEvent();
+        vList.push_back(ptr);
+    }
+    return 0;
+}
+
+void enableRead(){
+
+}
+
+
+} // day06
+
+

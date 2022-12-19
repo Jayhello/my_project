@@ -5,6 +5,7 @@
 #include <vector>
 #include <memory>
 #include <sys/epoll.h>//epoll
+#include <functional>
 
 // 原始的 socket 实现的echo server
 namespace v1{
@@ -121,3 +122,93 @@ void day05_example();
 void handleRead(int fd);
 
 } // day05
+
+namespace day06{
+
+class Channel;
+using ChannelPtr     = Channel*;
+using ChannelPtrList = std::vector<ChannelPtr>;
+
+class Epoll{
+public:
+    Epoll():epfd_(-1), events_(nullptr){}
+    ~Epoll();
+
+    int init();
+
+    void updateChannel(ChannelPtr pc);
+
+    int poll(ChannelPtrList& vList, int timeout = -1);
+
+    const static int MAX_EVENTS = 100;
+private:
+    int  epfd_          = -1;
+    struct epoll_event* events_;
+};
+
+using EpollPtr = Epoll*;
+
+using ReadCallbackFunc = std::function<void(ChannelPtr)>;
+
+class Channel{
+public:
+    Channel(EpollPtr pep, int fd):p_ep_(pep), fd_(fd){}
+
+    void setReadCallback(ReadCallbackFunc cb){read_cb_ = cb;}
+
+    void enableRead();
+
+    void handleRead(){
+        read_cb_(this);
+    }
+
+    int getFd()const{return fd_;}
+    int getEvent()const{return event_;}
+    int getEpEvent()const{return r_event_;}
+    void setEpEvent(int event){r_event_ = event;}
+
+    bool inEpoll()const{return b_in_ep_;}
+
+    void setInEpoll(bool flag){b_in_ep_ = flag;}
+private:
+    EpollPtr p_ep_;
+    int      fd_;
+    int      event_ = EPOLLET;
+    int      r_event_;
+    bool     b_in_ep_;
+    ReadCallbackFunc read_cb_;
+};
+
+class EventLoop{
+public:
+//    EventLoop(EpollPtr p_ep_);   // 这里可以支持传不同的Epoll类型, 例如select实现的poll
+    EventLoop():p_ep_(nullptr){}
+
+    int init();
+
+    void loop();
+
+    EpollPtr getEpollPtr(){
+        return p_ep_;
+    }
+private:
+    EpollPtr p_ep_;
+};
+
+using EventLoopPtr = EventLoop*;
+
+class Server{
+public:
+    Server(EventLoopPtr pel):sfd_(-1), p_el_(pel){}
+
+    int init();
+
+    void onNewConnection(ChannelPtr*);
+
+    void onRead(ChannelPtr*);
+private:
+    int            sfd_;
+    EventLoopPtr   p_el_;
+};
+
+} // day06
