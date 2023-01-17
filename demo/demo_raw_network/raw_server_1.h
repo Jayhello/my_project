@@ -127,6 +127,7 @@ namespace day06{
 
 void day06_example();
 
+// 下面的指针没有释放的问题, 先放下
 class Channel;
 using ChannelPtr     = Channel*;
 using ChannelPtrList = std::vector<ChannelPtr>;
@@ -154,7 +155,7 @@ using ReadCallbackFunc = std::function<void(ChannelPtr)>;
 
 class Channel{
 public:
-    Channel(EpollPtr pep, int fd):p_ep_(pep), fd_(fd){}
+    Channel(EpollPtr pep, int fd):p_ep_(pep), fd_(fd){}   // 原版的代码是和EventLoop绑定的, 这里先还是用eptr
 
     void setReadCallback(ReadCallbackFunc cb){read_cb_ = cb;}
 
@@ -202,6 +203,10 @@ private:
 
 using EventLoopPtr = EventLoop*;
 
+/*
+    1. 创建服务的fd
+    2. 设置accept, client fd的处理函数
+*/
 class Server{
 public:
     Server(EventLoopPtr pel):sfd_(-1), p_el_(pel){}
@@ -217,3 +222,35 @@ private:
 };
 
 } // day06
+
+/*
+ !!!!!  能复用的代码就复用吧, 这里就不在重新写了(一大堆代码看着也不好)
+ 1. 新增Acceptor类
+ 2. 修改day06的channel -> event loop关系
+*/
+namespace day07{
+void day07_example();
+
+using namespace day06;
+
+using AcceptCallbackFunc = std::function<void(ChannelPtr)>;
+
+class Acceptor{
+public:
+    Acceptor(EventLoopPtr pEl):p_el_(pEl){}
+
+    int init();
+
+    void setAcceptCallback(AcceptCallbackFunc);
+
+    void defaultAcceptCallback(ChannelPtr);
+
+private:
+    EventLoopPtr   p_el_;
+    int sfd_ = -1;
+    ChannelPtr pac_;
+    AcceptCallbackFunc cb_;
+};
+
+} // day07
+
