@@ -119,8 +119,8 @@ namespace v3{
 
 void echoClient(){
     std::vector<int> vec;
-
-    for(int i = 0; i < 10; ++i){
+    const int LOOP_CNT = 2;
+    for(int i = 0; i < LOOP_CNT; ++i){
         int fd = raw_v1::getTcpSocket();
         return_if(fd <= 0, "get_socket_fd_fail");
         info("fd: %d", fd);
@@ -133,7 +133,7 @@ void echoClient(){
         vec.push_back(fd);
     }
 
-    for(int i = 0; i < 10; ++i){
+    for(int i = 0; i < LOOP_CNT; ++i){
         for(auto fd : vec){
             string input = comm::util::util::format("%d_%d", fd, i);
             int iWriteSize = raw_v1::doWrite(fd, input);

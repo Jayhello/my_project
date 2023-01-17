@@ -19,7 +19,8 @@ int main(int argc, char** argv){
 //    v5::epollServer();
 //    v6::epollWarpServer();
 
-    day05::day05_example();
+//    day05::day05_example();
+    day06::day06_example();
 
     info("exit server1 demo");
     return 0;
@@ -760,6 +761,18 @@ void handleRead(int fd){
 
 namespace day06{
 
+void day06_example(){
+    EventLoop ep;
+    int ret = ep.init();
+    return_if(ret < 0, "event_loop_init_fail");
+
+    Server svr(&ep);
+    ret = svr.init();
+    return_if(ret < 0, "svr_init_fail");
+
+    ep.loop();
+}
+
 Epoll::~Epoll(){
     if(epfd_ > 0){
         close(epfd_);
@@ -786,7 +799,7 @@ void Epoll::updateChannel(ChannelPtr pc){
     epev.data.fd = pc->getFd();
     epev.data.ptr = pc;
     if(pc->inEpoll()){
-        epoll_ctl(epfd_, EPOLL_CTL_ADD, pc->getFd(), &epev);
+        epoll_ctl(epfd_, EPOLL_CTL_MOD, pc->getFd(), &epev);
     }else{
         epoll_ctl(epfd_, EPOLL_CTL_ADD, pc->getFd(), &epev);
     }
@@ -798,16 +811,104 @@ int Epoll::poll(ChannelPtrList& vList, int timeout){
 
     for(int i = 0; i < num; ++i){
         auto ptr = ChannelPtr(events_[i].data.ptr);
-        ptr->setEpEvent();
+        ptr->setEpEvent(events_[i].events);
         vList.push_back(ptr);
     }
     return 0;
 }
 
-void enableRead(){
-
+void Channel::enableRead(){
+    event_ |= EPOLLIN;
+    p_ep_->updateChannel(this);
+    b_in_ep_ = true;
 }
 
+EventLoop::~EventLoop(){
+    if(nullptr != p_ep_){
+        delete p_ep_;
+        p_ep_ = nullptr;
+    }
+}
+
+int EventLoop::init(){
+    p_ep_ = new Epoll();
+    int ret = p_ep_->init();
+    return_ret_if(ret < 0, ret, "epoll_init_fail");
+    return ret;
+}
+
+void EventLoop::loop(){
+    while(true){
+        ChannelPtrList vList;
+        p_ep_->poll(vList, 2);
+        for(auto ptr : vList){
+            ptr->handleRead();
+        }
+    }
+}
+
+int Server::init(){
+    sfd_ = raw_v1::createTcpServerSocket(LOCAL_IP, PORT);
+    return_ret_if(sfd_ <= 0, -1, "get_server_fd_fail");
+    info("server fd: %d", sfd_);
+
+    ChannelPtr pSc = new Channel(p_el_->getEpollPtr(), sfd_);
+    ReadCallbackFunc cb = std::bind(&Server::onNewConnection, this, pSc);
+
+    pSc->setReadCallback(cb);
+    pSc->enableRead();
+}
+
+void Server::onNewConnection(ChannelPtr ptr){
+    if(ptr->getEpEvent() & EPOLLIN){
+        string cIp;
+        int cPort = 0;
+        int cfd = raw_v1::doAccept(sfd_, cIp, cPort);
+
+        raw_v1::setNonBlock(cfd);
+
+        ChannelPtr pc = new Channel(p_el_->getEpollPtr(), cfd);
+        ReadCallbackFunc cb = std::bind(&Server::onRead, this, pc);
+
+        pc->setReadCallback(cb);
+        pc->enableRead();
+        info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+    }
+}
+
+void Server::onRead(ChannelPtr ptr){
+    int fd = ptr->getFd();
+    while(true) {  //由于使用非阻塞IO，读取客户端buffer，一次读取buf大小数据，直到全部读取完毕
+        string sData;
+        int iReadSize = raw_v1::doRead(fd, sData, 1024);
+        if (iReadSize > 0) {
+            info("get msg from fd: %d, size: %d, %s", fd, iReadSize, sData.c_str());
+            int iWriteSize = raw_v1::doWrite(fd, sData);  // < 0 简洁点去掉
+            info("echo back size: %d, %s", iWriteSize, sData.c_str());
+        } else if (0 == iReadSize) {  //EOF，客户端断开连接
+            info("fd: %d has close", fd);
+            raw_v1::doClose(fd);
+            //            epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+            break;
+        } else {  // -1
+            int error = errno;
+            if (EAGAIN == error or EWOULDBLOCK == error) {  //非阻塞IO，这个条件表示数据全部读取完毕
+                info("fd: %d no data...., ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
+                break;
+            } else if (EINTR == error) {  //客户端正常中断、继续读取
+                info("fd: %d continue reading...., ret: %d error: %d, %s", fd, iReadSize, error,
+                     strerror(error));
+                continue;
+            } else {
+                error("fd: %d read fail close it, ret: %d error: %d, %s", fd, iReadSize, error,
+                      strerror(error));
+                raw_v1::doClose(fd);
+                //                epoll_ctl(eFd, EPOLL_CTL_DEL, fd, nullptr);
+                break;
+            }
+        }
+    }
+}
 
 } // day06
 

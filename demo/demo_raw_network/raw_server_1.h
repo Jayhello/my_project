@@ -125,6 +125,8 @@ void handleRead(int fd);
 
 namespace day06{
 
+void day06_example();
+
 class Channel;
 using ChannelPtr     = Channel*;
 using ChannelPtrList = std::vector<ChannelPtr>;
@@ -158,6 +160,7 @@ public:
 
     void enableRead();
 
+    // 这里也有问题, 不能只有一个read(先简单的用read)
     void handleRead(){
         read_cb_(this);
     }
@@ -174,8 +177,8 @@ private:
     EpollPtr p_ep_;
     int      fd_;
     int      event_ = EPOLLET;
-    int      r_event_;
-    bool     b_in_ep_;
+    int      r_event_ = 0;
+    bool     b_in_ep_ = false;
     ReadCallbackFunc read_cb_;
 };
 
@@ -183,6 +186,8 @@ class EventLoop{
 public:
 //    EventLoop(EpollPtr p_ep_);   // 这里可以支持传不同的Epoll类型, 例如select实现的poll
     EventLoop():p_ep_(nullptr){}
+
+    ~EventLoop();
 
     int init();
 
@@ -203,9 +208,9 @@ public:
 
     int init();
 
-    void onNewConnection(ChannelPtr*);
+    void onNewConnection(ChannelPtr);
 
-    void onRead(ChannelPtr*);
+    void onRead(ChannelPtr);
 private:
     int            sfd_;
     EventLoopPtr   p_el_;
