@@ -229,6 +229,7 @@ private:
  2. 修改day06的channel -> event loop关系
 */
 namespace day07{
+
 void day07_example();
 
 using namespace day06;
@@ -252,5 +253,41 @@ private:
     AcceptCallbackFunc cb_;
 };
 
+class Server{
+public:
+    Server(EventLoopPtr p_el):p_el_(p_el), acceptor_(p_el){}
+    int init();
+
+    EventLoopPtr   p_el_;
+    Acceptor       acceptor_;
+};  // Server
+
 } // day07
 
+namespace day08{
+
+using namespace day06;
+
+class Acceptor{
+public:
+
+};
+
+using CloseConnectionCallback = std::function<void(int)>;
+
+class Connection{
+public:
+
+    ChannelPtr pc_;
+};
+
+class Server{
+public:
+    Server(EventLoopPtr p_el):p_el_(p_el), acceptor_(p_el){}
+    int init();
+
+    EventLoopPtr     p_el_;
+    day08::Acceptor  acceptor_;
+};  // Server
+
+} // day08

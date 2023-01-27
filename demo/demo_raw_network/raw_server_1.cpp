@@ -20,7 +20,9 @@ int main(int argc, char** argv){
 //    v6::epollWarpServer();
 
 //    day05::day05_example();
-    day06::day06_example();
+//    day06::day06_example();
+
+    day07::day07_example();
 
     info("exit server1 demo");
     return 0;
@@ -912,20 +914,39 @@ void onRead(ChannelPtr ptr){
 }
 
 void Acceptor::defaultAcceptCallback(ChannelPtr ptr){
-    if(ptr->getEpEvent() & EPOLLIN){
-        string cIp;
-        int cPort = 0;
-        int cfd = raw_v1::doAccept(sfd_, cIp, cPort);
-
-        raw_v1::setNonBlock(cfd);
-
-        ChannelPtr pc = new Channel(p_el_->getEpollPtr(), cfd);
-        ReadCallbackFunc cb = std::bind(onRead, pc);
-
-        pc->setReadCallback(cb);
-        pc->enableRead();
-        info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+    if(not (ptr->getEpEvent() & EPOLLIN)){
+        return ;
     }
+
+    string cIp;
+    int cPort = 0;
+    int cfd = raw_v1::doAccept(sfd_, cIp, cPort);
+
+    raw_v1::setNonBlock(cfd);
+
+    ChannelPtr pc = new Channel(p_el_->getEpollPtr(), cfd);
+    ReadCallbackFunc cb = std::bind(onRead, pc);
+
+    pc->setReadCallback(cb);
+    pc->enableRead();
+    info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+}
+
+int Server::init(){
+    return acceptor_.init();
+}
+
+void day07_example(){
+    EventLoop ep;
+    int ret = ep.init();
+    return_if(ret < 0, "event_loop_init_fail");
+
+    day07::Server svr(&ep);
+    ret = svr.init();
+    return_if(ret < 0, "svr_init_fail");
+
+    info("server init succ, now loop...");
+    ep.loop();
 }
 
 } // day07
