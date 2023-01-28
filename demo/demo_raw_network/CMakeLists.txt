@@ -15,7 +15,7 @@ SET(CMAKE_CXX_FLAGS -pthread)
 #message("main Protobuf lib: ${PROTOBUF_LIBRARIES}, inc: ${PROTOBUF_INCLUDE_DIR}")
 
 function(AddTestTarget test_exe test_src)
-    add_executable(${test_exe} ${test_src} raw_comm.cpp coroutine.cpp)
+    add_executable(${test_exe} ${test_src} raw_comm.cpp coroutine.cpp concurrency.cpp)
     target_link_libraries(
             ${test_exe}
             common_lib

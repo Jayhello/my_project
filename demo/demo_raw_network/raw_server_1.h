@@ -3,9 +3,21 @@
 //
 #pragma once
 #include <vector>
+#include <string>
 #include <memory>
+#include <map>
 #include <sys/epoll.h>//epoll
 #include <functional>
+#include "raw_comm.h"
+
+struct EndPoint{
+    int fd;
+    std::string sip;
+    int port;
+    inline std::string toString()const{
+        return comm::util::util::format("ip:%s,port:%d,fd:%d", sip.c_str(), port, fd);
+    }
+};
 
 // 原始的 socket 实现的echo server
 namespace v1{
@@ -266,28 +278,130 @@ public:
 
 namespace day08{
 
+void day08_example();
+
 using namespace day06;
+
+// 接受链接之后的 callback
+using AfterAcceptCallbackFunc = std::function<void(EndPoint)>;
 
 class Acceptor{
 public:
+    Acceptor(EventLoopPtr p_el):p_el_(p_el){}
 
+    int init();
+
+    void onAcceptEvent(ChannelPtr);
+
+    void setAfterAcceptCallback(AfterAcceptCallbackFunc cb);
+
+    EventLoopPtr            p_el_;
+    int                     sfd_ = -1;
+    ChannelPtr              pac_;
+    AfterAcceptCallbackFunc cb_afterAccept_;
 };
-
-using CloseConnectionCallback = std::function<void(int)>;
 
 class Connection{
 public:
+    Connection(EndPoint ep, EventLoopPtr p_el);
 
-    ChannelPtr pc_;
+    void handleEvent(ChannelPtr ptr);
+
+    EndPoint        ep_;
+    EventLoopPtr    p_el_;
+    ChannelPtr      pc_;
 };
+
+using ConnectionPtr = Connection*;
 
 class Server{
 public:
     Server(EventLoopPtr p_el):p_el_(p_el), acceptor_(p_el){}
+
     int init();
+
+    void afterAcceptCallback(EndPoint);
 
     EventLoopPtr     p_el_;
     day08::Acceptor  acceptor_;
+    std::map<int, ConnectionPtr> m_fd_con_;
 };  // Server
 
 } // day08
+
+
+/*
+    在 day08 的基础上加buffer
+    这里的buffer太简单了, 没有parse这些功能(后面在加吧)
+*/
+namespace day09{
+
+void example_09();
+
+using namespace day06;
+
+class Buffer{
+public:
+    void append(const string& str){
+        buf_.append(str);
+    }
+
+    int size()const{return buf_.size();}
+
+    const string& data()const{return buf_;}
+
+    std::string buf_;
+};
+
+using CloseConnectionCallback = std::function<void(const EndPoint&)>;
+
+class Connection{
+public:
+    Connection(EndPoint ep, EventLoopPtr p_el);
+
+    void handleEvent(ChannelPtr ptr);
+
+    void setCloseConnectionCallback(CloseConnectionCallback cb);
+
+    EndPoint        ep_;
+    EventLoopPtr    p_el_;
+    ChannelPtr      pc_;
+    Buffer          r_buf_;
+    CloseConnectionCallback cb_;
+};
+
+using ConnectionPtr = Connection*;
+
+class Server{
+public:
+    Server(EventLoopPtr p_el):p_el_(p_el), acceptor_(p_el){}
+
+    int init();
+
+    void afterAcceptCallback(EndPoint);
+
+    void onClose(const EndPoint& ep);
+
+    EventLoopPtr     p_el_;
+    day08::Acceptor  acceptor_;
+    std::map<int, ConnectionPtr> m_fd_con_;
+};  // Server
+
+} // day09
+
+/*
+ 这里将day10, day12合在一起, 支持线程池, main-reactor, sub-reactor
+*/
+
+namespace day10{
+
+void example();
+
+
+class Channel{
+
+};
+
+
+} // day10
+

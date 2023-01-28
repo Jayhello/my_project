@@ -3,7 +3,6 @@
 //
 
 #include "raw_server_1.h"
-#include "raw_comm.h"
 #include <set>
 #include <unordered_map>
 
@@ -22,7 +21,8 @@ int main(int argc, char** argv){
 //    day05::day05_example();
 //    day06::day06_example();
 
-    day07::day07_example();
+//    day07::day07_example();
+    day08::day08_example();
 
     info("exit server1 demo");
     return 0;
@@ -454,15 +454,6 @@ void epollServer(){
 
 // epoll 简单的封装为比较通用的 server
 namespace v6{
-
-struct EndPoint{
-    int fd;
-    string sip;
-    int port;
-    string toString()const{
-        return comm::util::util::format("ip:%s,port:%d,fd:%d", sip.c_str(), port, fd);
-    }
-};
 
 class EventLoopServer : noncopyable{
 public:
@@ -950,5 +941,84 @@ void day07_example(){
 }
 
 } // day07
+
+namespace day08{
+
+void day08_example(){
+    EventLoop ep;
+    int ret = ep.init();
+    return_if(ret < 0, "event_loop_init_fail");
+
+    day08::Server svr(&ep);
+    ret = svr.init();
+    return_if(ret < 0, "svr_init_fail");
+
+    info("%s, server init succ, now loop...", __FUNCTION__);
+    ep.loop();
+}
+
+int Acceptor::init(){
+    sfd_ = raw_v1::createTcpServerSocket(LOCAL_IP, PORT);
+    return_ret_if(sfd_ <= 0, -1, "get_server_fd_fail");
+    info("acceptor fd: %d", sfd_);
+
+    ChannelPtr pSc = new Channel(p_el_->getEpollPtr(), sfd_);
+    ReadCallbackFunc cb = std::bind(&Acceptor::onAcceptEvent, this, pSc);
+
+    pSc->setReadCallback(cb);
+    pSc->enableRead();
+}
+
+void Acceptor::onAcceptEvent(ChannelPtr ptr){
+    if(not (ptr->getEpEvent() & EPOLLIN)){
+        return ;
+    }
+
+    string cIp;
+    int cPort = 0;
+    int cfd = raw_v1::doAccept(sfd_, cIp, cPort);
+
+    raw_v1::setNonBlock(cfd);
+    EndPoint ep{cfd, cIp, cPort};
+    cb_afterAccept_(ep);
+
+//    ChannelPtr pc = new Channel(p_el_->getEpollPtr(), cfd);
+//    ReadCallbackFunc cb = std::bind(onRead, pc);
+//
+//    pc->setReadCallback(cb);
+//    pc->enableRead();
+//    info("accept new client fd: %d, ip: %s, port: %d", cfd, cIp.c_str(), cPort);
+}
+
+void Acceptor::setAfterAcceptCallback(AfterAcceptCallbackFunc cb){
+    cb_afterAccept_ = cb;
+}
+
+Connection::Connection(EndPoint ep, EventLoopPtr p_el):ep_(ep), p_el_(p_el){
+    pc_ = new Channel(p_el_->getEpollPtr(), ep_.fd);
+
+    ReadCallbackFunc cb = std::bind(&Connection::handleEvent, this, pc_);
+    pc_->setReadCallback(cb);
+    pc_->enableRead();
+}
+
+void Connection::handleEvent(ChannelPtr ptr){
+    int fd = ptr->getFd();
+    day05::handleRead(fd);
+}
+
+int Server::init(){
+    auto cb = std::bind(&Server::afterAcceptCallback, this, std::placeholders::_1);
+    acceptor_.setAfterAcceptCallback(cb);
+    return acceptor_.init();
+}
+
+void Server::afterAcceptCallback(EndPoint ep){
+    info("accept new client %s", ep.toString().c_str());
+    ConnectionPtr pc = new Connection(ep, p_el_);
+    m_fd_con_[ep.fd] = pc;
+}
+
+} // day08
 
 
