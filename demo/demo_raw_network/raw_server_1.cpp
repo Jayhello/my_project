@@ -1021,4 +1021,26 @@ void Server::afterAcceptCallback(EndPoint ep){
 
 } // day08
 
+namespace day10{
 
+Channel::Channel(EventLoopPtr pev, int fd):p_ev_(pev), fd_(fd){
+}
+
+void Channel::enableRead(){
+    events_ |= (EPOLLIN | EPOLLPRI);
+    p_ev_->updateChannel(this);
+}
+
+void Channel::updateEvent(int ev){
+
+}
+
+void Channel::setHandle(EventHandle eh){
+
+}
+
+void Channel::handleEvent(){
+
+}
+
+} // day10

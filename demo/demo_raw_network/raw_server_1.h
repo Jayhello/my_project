@@ -397,11 +397,69 @@ namespace day10{
 
 void example();
 
+class   EventLoop;
+using   EventLoopPtr = EventLoop*;
+
+using EventHandle = std::function<void()>;
 
 class Channel{
+public:
+    Channel(EventLoopPtr pev, int fd);
 
+    int getFd()const{return fd_;}
+
+    void enableRead();
+
+    void updateEvent(int ev);
+
+    void setHandle(EventHandle eh);
+
+    void handleEvent();
+
+    EventLoopPtr  p_ev_;
+    int           fd_;
+    int           events_ = 0;
+    int           revents_ = 0;
+    bool          inEpoll_ = false;
+    EventHandle   handle_;
 };
 
+using ChannelPtr        = Channel*;
+using ChannelPtrList    =std::vector<ChannelPtr>;
+
+class Epoll{
+public:
+    Epoll():epfd_(-1), events_(nullptr){}
+    ~Epoll();
+
+    int init();
+
+    void updateChannel(ChannelPtr pc);
+
+    int poll(ChannelPtrList& vList, int timeout = -1);
+
+    const static int MAX_EVENTS = 100;
+private:
+    int  epfd_          = -1;
+    struct epoll_event* events_;
+};
+
+using EpollPtr = Epoll*;
+
+class EventLoop{
+public:
+
+    void loop();
+
+    void updateChannel(ChannelPtr pc);
+
+    EpollPtr ep_;
+};
+
+class Server{
+public:
+
+};
 
 } // day10
 
