@@ -9,6 +9,7 @@
 #include <sys/epoll.h>//epoll
 #include <functional>
 #include "raw_comm.h"
+#include "concurrency.h"
 
 struct EndPoint{
     int fd;
@@ -446,19 +447,70 @@ private:
 
 using EpollPtr = Epoll*;
 
+using concurrency::ThreadPool;
+using ThreadPoolPtr = ThreadPool*;
+
 class EventLoop{
 public:
+    // 这里构造函数也可以不传thread_pool_ptr, 可以set, 支持不同的模式
+    EventLoop(ThreadPoolPtr ptp);
 
     void loop();
 
     void updateChannel(ChannelPtr pc);
 
-    EpollPtr ep_;
+    ThreadPoolPtr   tp_ = nullptr;
+    EpollPtr        ep_;
+};
+
+// 关闭链接之后的 callback
+using CloseCallback = std::function<void(EndPoint)>;
+
+class Connection{
+public:
+    Connection(EventLoopPtr ep, ChannelPtr pc);
+
+    void handleEvent();
+
+    void setCloseCallback(CloseCallback cb);
+
+    EventLoopPtr     ep_;
+    ChannelPtr       ch_;
+    CloseCallback    close_cb_;
+};
+
+// 接受链接之后的 callback
+using ConnectCallback = std::function<void(EndPoint)>;
+
+class Acceptor{
+public:
+    Acceptor(EventLoopPtr ep);
+
+    int init();
+
+    void handleEvent();  // 处理accept事件
+
+    void setConnectCallback(ConnectCallback cb);  // 链接成功回调
+
+    EventLoopPtr     ep_;
+    ChannelPtr       ch_;
+    ConnectCallback  connect_cb_;
 };
 
 class Server{
 public:
+    Server(EventLoopPtr ep);
 
+    int waitForShutdown();
+
+    void connectCallback();
+
+    void closeCallback();
+
+    EventLoopPtr                mainEp_;
+    std::vector<EventLoopPtr>   subEps_;
+    ThreadPoolPtr               mainTp_;
+    ThreadPoolPtr               subTp_;
 };
 
 } // day10
