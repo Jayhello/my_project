@@ -22,7 +22,9 @@ int main(int argc, char** argv){
 //    day06::day06_example();
 
 //    day07::day07_example();
-    day08::day08_example();
+//    day08::day08_example();
+
+    day10::example();
 
     info("exit server1 demo");
     return 0;
@@ -1023,24 +1025,219 @@ void Server::afterAcceptCallback(EndPoint ep){
 
 namespace day10{
 
+void example(){
+    Server svr;
+    svr.waitForShutdown();
+}
+
 Channel::Channel(EventLoopPtr pev, int fd):p_ev_(pev), fd_(fd){
 }
 
 void Channel::enableRead(){
     events_ |= (EPOLLIN | EPOLLPRI);
     p_ev_->updateChannel(this);
+    inEpoll_ = true;
 }
 
 void Channel::updateEvent(int ev){
-
+    revents_ = ev;
 }
 
 void Channel::setHandle(EventHandle eh){
-
+    handle_ = eh;
 }
 
 void Channel::handleEvent(){
+    handle_();
+}
 
+int Epoll::init(){
+    epfd_ = epoll_create(1);
+    if(epfd_ < 0) return -1;
+
+    events_ = new epoll_event[MAX_EVENTS];
+    bzero(events_, sizeof(*events_) * MAX_EVENTS);
+}
+
+void Epoll::updateChannel(ChannelPtr pc){
+    struct epoll_event epev;
+    epev.events = pc->getEvent();
+    epev.data.fd = pc->getFd();
+    epev.data.ptr = pc;
+    if(pc->inEpoll()){
+        epoll_ctl(epfd_, EPOLL_CTL_MOD, pc->getFd(), &epev);
+    }else{
+        epoll_ctl(epfd_, EPOLL_CTL_ADD, pc->getFd(), &epev);
+    }
+}
+
+int Epoll::poll(ChannelPtrList& vList, int timeout){
+    int num = epoll_wait(epfd_, events_, MAX_EVENTS, timeout);
+    return_ret_if(num < 0, num, "epoll_wait_fail");
+
+    for(int i = 0; i < num; ++i){
+        auto ptr = ChannelPtr(events_[i].data.ptr);
+        ptr->updateEvent(events_[i].events);
+        vList.push_back(ptr);
+    }
+    return 0;
+}
+
+EventLoop::EventLoop(ThreadPoolPtr ptp):tp_(ptp){
+}
+
+int EventLoop::init(){
+    ep_ = new Epoll();
+    int ret = ep_->init();
+    return_ret_if(ret < 0, ret, "epoll_init_fail");
+    return ret;
+}
+
+void EventLoop::loop(){
+    while(true){
+        ChannelPtrList vList;
+        ep_->poll(vList, 2);
+        for(auto ptr : vList){
+            ptr->handleEvent();
+        }
+    }
+}
+
+void EventLoop::updateChannel(ChannelPtr pc){
+    ep_->updateChannel(pc);
+}
+
+Connection::Connection(EventLoopPtr ep, EndPoint e):ep_(ep), e_(e){
+    ch_ = new Channel(ep_, e.fd);
+
+    auto cb = std::bind(&Connection::handleEvent, this);
+    ch_->setHandle(cb);
+    ch_->enableRead();
+}
+
+void Connection::handleEvent(){
+    int fd = ch_->getFd();
+    while(true) {  //由于使用非阻塞IO，读取客户端buffer，一次读取buf大小数据，直到全部读取完毕
+        string sData;
+        int iReadSize = raw_v1::doRead(fd, sData, 1024);
+        if (iReadSize > 0) {
+            info("get msg from fd: %d, size: %d, %s", fd, iReadSize, sData.c_str());
+            int iWriteSize = raw_v1::doWrite(fd, sData);  // < 0 简洁点去掉
+            info("echo back size: %d, %s", iWriteSize, sData.c_str());
+        } else if (0 == iReadSize) {  //EOF，客户端断开连接
+            info("fd: %d has close", fd);
+            raw_v1::doClose(fd);
+            //            epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+            break;
+        } else {  // -1
+            int error = errno;
+            if (EAGAIN == error or EWOULDBLOCK == error) {  //非阻塞IO，这个条件表示数据全部读取完毕
+                info("fd: %d no data...., ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
+                break;
+            } else if (EINTR == error) {  //客户端正常中断、继续读取
+                info("fd: %d continue reading...., ret: %d error: %d, %s", fd, iReadSize, error,
+                     strerror(error));
+                continue;
+            } else {
+                error("fd: %d read fail close it, ret: %d error: %d, %s", fd, iReadSize, error,
+                      strerror(error));
+                raw_v1::doClose(fd);
+                close_cb_(fd);
+                //                epoll_ctl(eFd, EPOLL_CTL_DEL, fd, nullptr);
+                break;
+            }
+        }
+    }
+}
+
+void Connection::setCloseCallback(CloseCallback cb){
+    close_cb_ = cb;
+}
+
+Acceptor::Acceptor(EventLoopPtr ep):ep_(ep){
+}
+
+int Acceptor::init(){
+    sfd_ = raw_v1::createTcpServerSocket(LOCAL_IP, PORT);
+    return_ret_if(sfd_ <= 0, -1, "get_server_fd_fail");
+    info("acceptor fd: %d", sfd_);
+
+    ChannelPtr pSc = new Channel(ep_, sfd_);
+    auto cb = std::bind(&Acceptor::handleEvent, this);
+
+    pSc->setHandle(cb);
+    pSc->enableRead();
+    return 0;
+}
+
+void Acceptor::handleEvent(){
+    string cIp;
+    int cPort = 0;
+    int cfd = raw_v1::doAccept(sfd_, cIp, cPort);
+    return_if(cfd < 0, "accept_fail");
+
+    raw_v1::setNonBlock(cfd);
+    EndPoint ep{cfd, cIp, cPort};
+    connect_cb_(ep);
+}
+
+void Acceptor::setConnectCallback(ConnectCallback cb){
+    connect_cb_ = cb;
+}
+
+Server::Server(){
+}
+
+int Server::waitForShutdown(){
+    mainTp_ = new ThreadPool(3);
+    mainEp_ = new EventLoop(mainTp_);
+    int ret = mainEp_->init();
+    return_ret_if(ret < 0, ret, "main_loop_init_fail");
+
+    subTp_ = new ThreadPool(3);
+
+    for(int i = 0; i < subSize_; ++i){
+        auto p = new EventLoop(subTp_);
+        ret = p->init();
+        return_ret_if(ret < 0, ret, "sub_loop_init_fail");
+        subEps_.push_back(p);
+
+        subTp_->add([p](){
+            p->loop();
+        });
+    }
+
+    p_acceptor_ = new Acceptor(mainEp_);
+    ret = p_acceptor_->init();
+    return_ret_if(ret < 0, ret, "accept_init_fail");
+
+    auto cb = std::bind(&Server::connectCallback, this, std::placeholders::_1);
+    p_acceptor_->setConnectCallback(cb);
+
+    mainTp_->add([this](){
+        mainEp_->loop();
+    });
+
+    info("init succ");
+    sleep(10000);
+
+    return 0;
+}
+
+void Server::connectCallback(EndPoint ep){
+    int idx = ep.fd % subSize_;
+    info("accept new client %s, sub idx: %d", ep.toString().c_str(), idx);
+
+    auto pc = new Connection(subEps_[idx], ep);
+    auto cb = std::bind(&Server::closeCallback, this, ep);
+    pc->setCloseCallback(cb);
+
+    m_fdConn[ep.fd] = pc;
+}
+
+void Server::closeCallback(EndPoint ep){
+    info("delete connection %s", ep.toString().c_str());
+    m_fdConn.erase(ep.fd);
 }
 
 } // day10

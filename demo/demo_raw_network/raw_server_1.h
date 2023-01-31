@@ -409,6 +409,10 @@ public:
 
     int getFd()const{return fd_;}
 
+    bool inEpoll()const{return inEpoll_;}
+
+    int getEvent()const{return events_;}
+
     void enableRead();
 
     void updateEvent(int ev);
@@ -455,26 +459,29 @@ public:
     // 这里构造函数也可以不传thread_pool_ptr, 可以set, 支持不同的模式
     EventLoop(ThreadPoolPtr ptp);
 
+    int init();
+
     void loop();
 
     void updateChannel(ChannelPtr pc);
 
     ThreadPoolPtr   tp_ = nullptr;
-    EpollPtr        ep_;
+    EpollPtr        ep_ = nullptr;
 };
 
 // 关闭链接之后的 callback
-using CloseCallback = std::function<void(EndPoint)>;
+using CloseCallback = std::function<void(int)>;
 
 class Connection{
 public:
-    Connection(EventLoopPtr ep, ChannelPtr pc);
+    Connection(EventLoopPtr pep, EndPoint ep);
 
     void handleEvent();
 
     void setCloseCallback(CloseCallback cb);
 
     EventLoopPtr     ep_;
+    EndPoint         e_;
     ChannelPtr       ch_;
     CloseCallback    close_cb_;
 };
@@ -493,24 +500,28 @@ public:
     void setConnectCallback(ConnectCallback cb);  // 链接成功回调
 
     EventLoopPtr     ep_;
+    int sfd_ = -1;
     ChannelPtr       ch_;
     ConnectCallback  connect_cb_;
 };
 
 class Server{
 public:
-    Server(EventLoopPtr ep);
+    Server();
 
     int waitForShutdown();
 
-    void connectCallback();
+    void connectCallback(EndPoint ep);
 
-    void closeCallback();
+    void closeCallback(EndPoint ep);
 
     EventLoopPtr                mainEp_;
     std::vector<EventLoopPtr>   subEps_;
+    int                         subSize_ = 3;
     ThreadPoolPtr               mainTp_;
     ThreadPoolPtr               subTp_;
+    Acceptor*                   p_acceptor_;
+    std::map<int, Connection*>  m_fdConn;
 };
 
 } // day10
