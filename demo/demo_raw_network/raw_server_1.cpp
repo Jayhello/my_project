@@ -1051,6 +1051,12 @@ void Channel::handleEvent(){
     handle_();
 }
 
+Epoll::~Epoll(){
+    if(nullptr != events_){
+        delete []events_;
+    }
+}
+
 int Epoll::init(){
     epfd_ = epoll_create(1);
     if(epfd_ < 0) return -1;
@@ -1084,6 +1090,12 @@ int Epoll::poll(ChannelPtrList& vList, int timeout){
 }
 
 EventLoop::EventLoop(ThreadPoolPtr ptp):tp_(ptp){
+}
+
+EventLoop::~EventLoop(){
+    if(nullptr != ep_){
+        delete ep_;
+    }
 }
 
 int EventLoop::init(){

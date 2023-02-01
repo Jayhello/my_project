@@ -458,6 +458,7 @@ class EventLoop{
 public:
     // 这里构造函数也可以不传thread_pool_ptr, 可以set, 支持不同的模式
     EventLoop(ThreadPoolPtr ptp);
+    ~EventLoop();
 
     int init();
 
