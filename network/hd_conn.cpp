@@ -3,3 +3,7 @@
 //
 
 #include "hd_conn.h"
+
+namespace hd{
+
+} // hd

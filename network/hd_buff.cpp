@@ -3,3 +3,7 @@
 //
 
 #include "hd_buff.h"
+
+namespace hd{
+
+} // hd

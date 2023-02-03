@@ -3,3 +3,9 @@
 //
 
 #include "hd_poll.h"
+
+namespace hd{
+
+
+
+} // hd

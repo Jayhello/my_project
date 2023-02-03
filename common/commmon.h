@@ -6,3 +6,5 @@
 
 #include "logging.h"
 #include "util.h"
+
+#define NOW_MS comm::util::util::timeMilli()
