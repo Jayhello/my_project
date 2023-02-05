@@ -22,12 +22,10 @@ int EpollTimer::loop(){
 }
 
 int EpollTimer::loopOnce(){
-    int num = epoll_wait(efd_, events_, MAX_EVENTS, timeOut_);
+    int num = epoll_wait(efd_, events_, MAX_EVENTS, timeOutMs_);
     return_ret_if(num < 0, num, "epoll_wait_fail");
 
-    for(int i = 0; i < num; ++i){
-
-    }
+    for(int i = 0; i < num; ++i){}
 
     long lNowMs = NOW_MS;
     auto it = idTask_.begin();
@@ -38,8 +36,20 @@ int EpollTimer::loopOnce(){
 
         it->second.doTask();
 
+        const auto & tm = it->first;
+        const auto & task = it->second;
+
+        if(task.isLoopTask()){
+            TimerId tNewId = {lNowMs + task.getIntervalMs()};
+            TimerTask timerTask = TimerTask(task.getCaller(), );
+            auto item = std::make_pair<TimerId, TimerTask>(, );
+            idTask_.insert();
+        }else{
+            idTask_.erase(it->first);
+        }
     }
 
+    return 0;
 }
 
 

@@ -14,6 +14,7 @@
 #include <sys/epoll.h>//epoll
 #include <map>
 #include <functional>
+#include <iostream>
 #include "common/logging.h"
 #include "common/commmon.h"
 
@@ -35,16 +36,30 @@ struct TimerTask{
 
     using Caller = std::function<void(void)>;
 
+    TimerTask(Caller cl, int t, long lIntervalMs):call_(cl), type_(t), lIntervalMs_(lIntervalMs){
+    }
+
+    long getIntervalMs()const{
+        return lIntervalMs_;
+    }
+
     bool isLoopTask()const{
-        return type == LOOP;
+        return type_ == LOOP;
+    }
+
+    int getType()const{return type_;}
+
+    const Caller& getCaller()const{
+        return call_;
     }
 
     void doTask()const{
-        call();
+        call_();
     }
 
-    Caller call;
-    int    type = ONCE;
+    Caller call_;
+    int    type_ = ONCE;
+    long   lIntervalMs_ = 0;
 };
 
 struct TimerId{
@@ -78,7 +93,7 @@ struct EpollTimer{
     int  efd_                       = -1;
     struct epoll_event*     events_ = nullptr;
     std::multimap<TimerId, TimerTask> idTask_;
-    int  timeOutMs_ = 1000;
+    int  timeOutMs_                 = 1000;
 };
 
 
