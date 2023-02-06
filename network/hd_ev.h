@@ -63,6 +63,7 @@ struct TimerTask{
 };
 
 struct TimerId{
+    long lId;       // id(同一个Timer里面自增唯一)
     long lTimeMs;   // 毫秒时间戳
 };
 
