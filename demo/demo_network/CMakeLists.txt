@@ -37,3 +37,11 @@ target_link_libraries(demo_service
         proto_lib
         ${PROTOBUF_LIBRARIES}
         )
+
+add_executable(hd_example hd_example.cpp)
+target_link_libraries(hd_example
+        common_lib
+        network_lib
+        proto_lib
+        ${PROTOBUF_LIBRARIES}
+        )

@@ -66,8 +66,8 @@ struct TimerTask{
 struct TimerId{
     long lId;       // id(同一个Timer里面自增唯一)
     long lTimeMs;   // 毫秒时间戳
-    bool operator < (const TimerId& t1, const TimerId& t2){
-        return t1.lTimeMs < t2.lTimeMs;
+    bool operator < (const TimerId& t1)const{
+        return lTimeMs < t1.lTimeMs;
     }
 };
 
@@ -92,22 +92,22 @@ struct EpollTimer{
 
     template<typename Fun, typename... Args>
     void runAt(long lTsMs, Fun&& fun, Args&&... args){
-        auto fun = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
-        TimerTask task(fun);
+        auto f = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
+        TimerTask task(f);
         addTask(lTsMs, task);
     }
 
     template<typename Fun, typename... Args>
     void runAfter(long lTsMs, Fun&& fun, Args&&... args){
-        auto fun = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
-        TimerTask task(fun);
+        auto f = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
+        TimerTask task(f);
         addTask(lTsMs + NOW_MS, task);
     }
 
     template<typename Fun, typename... Args>
     void runEvery(long lInterval, Fun&& fun, Args&&... args){
-        auto fun = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
-        TimerTask task(fun, TimerTask::LOOP, lInterval);
+        auto f = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
+        TimerTask task(f, TimerTask::LOOP, lInterval);
         addTask(lInterval + NOW_MS, task);
     }
 
@@ -117,6 +117,7 @@ struct EpollTimer{
         idTask_.insert({timerId, task});
     }
 
+private:
     int  efd_                       = -1;
     struct epoll_event*     events_ = nullptr;
     std::multimap<TimerId, TimerTask> idTask_;
