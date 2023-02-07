@@ -15,6 +15,7 @@
 #include <map>
 #include <functional>
 #include <iostream>
+#include <atomic>
 #include "common/logging.h"
 #include "common/commmon.h"
 
@@ -36,7 +37,7 @@ struct TimerTask{
 
     using Caller = std::function<void(void)>;
 
-    TimerTask(Caller cl, int t, long lIntervalMs):call_(cl), type_(t), lIntervalMs_(lIntervalMs){
+    TimerTask(Caller cl, int t = ONCE, long lIntervalMs = 0):call_(cl), type_(t), lIntervalMs_(lIntervalMs){
     }
 
     long getIntervalMs()const{
@@ -65,6 +66,9 @@ struct TimerTask{
 struct TimerId{
     long lId;       // id(同一个Timer里面自增唯一)
     long lTimeMs;   // 毫秒时间戳
+    bool operator < (const TimerId& t1, const TimerId& t2){
+        return t1.lTimeMs < t2.lTimeMs;
+    }
 };
 
 struct EpollTimer{
@@ -76,25 +80,49 @@ struct EpollTimer{
 
     int loopOnce();
 
-    template<typename Fun, typename... Args>
-    void runAt(long lTs, Fun&& fun, Args&&... args){
+    bool hasStop()const{return bStop_;}
 
+    void stop(){
+        bStop_ = true;
+    }
+
+    int genAutoId(){
+        return ++iAutoId_;
+    }
+
+    template<typename Fun, typename... Args>
+    void runAt(long lTsMs, Fun&& fun, Args&&... args){
+        auto fun = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
+        TimerTask task(fun);
+        addTask(lTsMs, task);
+    }
+
+    template<typename Fun, typename... Args>
+    void runAfter(long lTsMs, Fun&& fun, Args&&... args){
+        auto fun = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
+        TimerTask task(fun);
+        addTask(lTsMs + NOW_MS, task);
     }
 
     template<typename Fun, typename... Args>
     void runEvery(long lInterval, Fun&& fun, Args&&... args){
-
+        auto fun = std::bind(std::forward<Fun>(fun), std::forward<Args>(args)...);
+        TimerTask task(fun, TimerTask::LOOP, lInterval);
+        addTask(lInterval + NOW_MS, task);
     }
 
-    template<typename Fun, typename... Args>
-    void runAfter(long lTs, Fun&& fun, Args&&... args){
-
+    void addTask(long lRunMs, const TimerTask& task){
+        long lId = genAutoId();
+        TimerId timerId{lId, lRunMs};
+        idTask_.insert({timerId, task});
     }
 
     int  efd_                       = -1;
     struct epoll_event*     events_ = nullptr;
     std::multimap<TimerId, TimerTask> idTask_;
     int  timeOutMs_                 = 1000;
+    bool bStop_                     = false;
+    std::atomic_int iAutoId_;
 };
 
 

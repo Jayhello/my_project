@@ -7,6 +7,7 @@
 namespace hd{
 
 int EpollTimer::init(){
+    iAutoId_ = 0;
     efd_ = epoll_create(1);
     if(efd_ < 0) return -1;
 
@@ -17,6 +18,9 @@ int EpollTimer::init(){
 }
 
 int EpollTimer::loop(){
+    while(not hasStop()){
+        loopOnce();
+    }
     return 0;
 }
 
@@ -29,18 +33,22 @@ int EpollTimer::loopOnce(){
     auto it = idTask_.begin();
     while(it != idTask_.end()){
         if(it->first.lTimeMs > lNowMs){
+            timeOutMs_ = it->first.lTimeMs - lNowMs;
+            info("update next wait_ms: %d", timeOutMs_);
             break;
         }
 
-        it->second.doTask();
-
         const auto & timerId = it->first;
         const auto & task = it->second;
+        info("do task: %ld", timerId.lId);
+
+        it->second.doTask();
 
         if(task.isLoopTask()){
             TimerId tNewId = {timerId.lId, lNowMs + task.getIntervalMs()};
             TimerTask timerTask = TimerTask(task.getCaller(), task.getType(), task.getIntervalMs());
             idTask_.insert({tNewId, timerTask});
+            info("re_add repeated task: %ld, execute", timerId.lId);
         }else{
 //            idTask_.erase(it->first);
         }
