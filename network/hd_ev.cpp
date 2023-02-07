@@ -17,7 +17,6 @@ int EpollTimer::init(){
 }
 
 int EpollTimer::loop(){
-
     return 0;
 }
 
@@ -26,7 +25,6 @@ int EpollTimer::loopOnce(){
     return_ret_if(num < 0, num, "epoll_wait_fail");
 
     for(int i = 0; i < num; ++i){}
-
     long lNowMs = NOW_MS;
     auto it = idTask_.begin();
     while(it != idTask_.end()){
@@ -36,17 +34,17 @@ int EpollTimer::loopOnce(){
 
         it->second.doTask();
 
-        const auto & tm = it->first;
+        const auto & timerId = it->first;
         const auto & task = it->second;
 
         if(task.isLoopTask()){
-            TimerId tNewId = {lNowMs + task.getIntervalMs()};
-            TimerTask timerTask = TimerTask(task.getCaller(), );
-            auto item = std::make_pair<TimerId, TimerTask>(, );
-            idTask_.insert();
+            TimerId tNewId = {timerId.lId, lNowMs + task.getIntervalMs()};
+            TimerTask timerTask = TimerTask(task.getCaller(), task.getType(), task.getIntervalMs());
+            idTask_.insert({tNewId, timerTask});
         }else{
-            idTask_.erase(it->first);
+//            idTask_.erase(it->first);
         }
+        it = idTask_.erase(it);
     }
 
     return 0;
