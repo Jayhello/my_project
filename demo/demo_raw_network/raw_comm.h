@@ -30,6 +30,15 @@ using log_v1::ScopeLog;
 #define LOCAL_IP    "127.0.0.1"
 #define PORT        8880
 
+struct EndPoint{
+    int fd;
+    std::string sip;
+    int port;
+    inline std::string toString()const{
+        return comm::util::util::format("ip:%s,port:%d,fd:%d", sip.c_str(), port, fd);
+    }
+};
+
 // 用原始的socket编程不少参数不好理解, 而且繁琐, 因此这里封装更好懂的c++接口, 简化编程
 namespace raw_v1{
 
@@ -72,3 +81,30 @@ int setReusePort(int fd);
 int setSocketOpt(int fd, int opt, const void* val, socklen_t opt_len, int level);
 
 } // raw_v1
+
+/*
+    将channel, poll, event_loop, connection写个个基类, 后面扩展代码的时候简洁点
+    函数构造传指针即可
+*/
+namespace raw_comm{
+
+class EventLoop;
+using EventLoopPtr = EventLoop*;
+
+class ChannelBase{
+public:
+    ChannelBase(const EndPoint& ePoint, EventLoopPtr ptrEl): ePoint_(ePoint), ptrEl_(ptrEl){}
+
+
+private:
+    EndPoint      ePoint_;
+    EventLoopPtr  ptrEl_;
+
+
+};
+
+using ChannelPtr = ChannelBase*;
+
+
+
+}

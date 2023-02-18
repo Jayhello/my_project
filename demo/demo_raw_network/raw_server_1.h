@@ -11,15 +11,6 @@
 #include "raw_comm.h"
 #include "concurrency.h"
 
-struct EndPoint{
-    int fd;
-    std::string sip;
-    int port;
-    inline std::string toString()const{
-        return comm::util::util::format("ip:%s,port:%d,fd:%d", sip.c_str(), port, fd);
-    }
-};
-
 // 原始的 socket 实现的echo server
 namespace v1{
 
