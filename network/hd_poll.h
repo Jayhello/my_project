@@ -6,5 +6,16 @@
 
 namespace hd{
 
+class Channel;
+
+using ChannelPtr = Channel*;
+
+struct PollerBase{
+    virtual ~PollerBase() = 0;
+
+    virtual void addChannel(ChannelPtr) = 0;
+    virtual void removeChannel(ChannelPtr) = 0;
+    virtual void updateChannel(ChannelPtr) = 0;
+};
 
 } // hd

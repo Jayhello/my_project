@@ -527,3 +527,9 @@ public:
 
 } // day10
 
+/*
+    支持发送接受buffer, codec编解码, 以及write
+*/
+namespace day11{
+
+}
