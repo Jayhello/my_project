@@ -17,6 +17,7 @@
 #include <string>
 #include <iostream>
 #include <signal.h>
+#include <sys/poll.h>
 #include "coroutine.h"
 
 using std::string;
@@ -91,15 +92,22 @@ namespace raw_comm{
 class EventLoop;
 using EventLoopPtr = EventLoop*;
 
+enum kEvents{
+    kReadEvent  = POLLIN,        // 0x001
+    kWriteEvent = POLLOUT,       // 0x004
+};
+
 class ChannelBase{
 public:
     ChannelBase(const EndPoint& ePoint, EventLoopPtr ptrEl): ePoint_(ePoint), ptrEl_(ptrEl){}
+
 
 
 private:
     EndPoint      ePoint_;
     EventLoopPtr  ptrEl_;
 
+    int           events_ = 0;
 
 };
 
