@@ -101,6 +101,28 @@ class ChannelBase{
 public:
     ChannelBase(const EndPoint& ePoint, EventLoopPtr ptrEl): ePoint_(ePoint), ptrEl_(ptrEl){}
 
+    const EndPoint& getEndPoint()const{
+        return ePoint_;
+    }
+
+    int getEvent()const{
+        return events_;
+    }
+
+    using ReadHandle  = std::function<void(void)>;
+    using WriteHandle = std::function<void(void)>;
+
+    void setReadHandle(const ReadHandle& rh){readHandle_ = rh;}
+    void setWriteHandle(const WriteHandle& wh){writeHandle_ = wh;}
+
+    void handleRead(){readHandle_();}
+    void handleWrite(){writeHandle_();}
+
+    void enableRead(bool flag);
+    void enableWrite(bool flag);
+
+    bool readEnabled()const;
+    bool writEnabled()const;
 
 
 private:
@@ -108,7 +130,8 @@ private:
     EventLoopPtr  ptrEl_;
 
     int           events_ = 0;
-
+    ReadHandle    readHandle_;
+    WriteHandle   writeHandle_;
 };
 
 using ChannelPtr = ChannelBase*;
