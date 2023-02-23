@@ -123,8 +123,6 @@ public:
 
     bool readEnabled()const;
     bool writEnabled()const;
-
-
 private:
     EndPoint      ePoint_;
     EventLoopPtr  ptrEl_;
@@ -135,6 +133,24 @@ private:
 };
 
 using ChannelPtr = ChannelBase*;
+
+using ChannelPtrList = std::vector<ChannelPtr>;
+
+class EpollBase{
+public:
+    int init();
+
+    void addChannel();
+
+    void updateChannel();
+
+    ChannelPtrList pollOnce(int timeoutMs);
+
+    const static int MAX_EVENTS = 100;
+private:
+    int epfd_ = -1;
+    struct epoll_event* events_;
+};
 
 
 
