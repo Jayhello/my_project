@@ -140,9 +140,9 @@ class EpollBase{
 public:
     int init();
 
-    void addChannel();
+    void addChannel(ChannelPtr);
 
-    void updateChannel();
+    void updateChannel(ChannelPtr);
 
     ChannelPtrList pollOnce(int timeoutMs);
 
@@ -152,6 +152,53 @@ private:
     struct epoll_event* events_;
 };
 
+using EpollBasePtr = EpollBase*;
+
+class EventLoopBase{
+public:
+    int init();
+
+    ~EventLoopBase();
+
+//    void waitForShutDown();
+    void loop();
+
+private:
+    EpollBasePtr ptrPoll_ = nullptr;
+    bool         init_    = false;
+};
+
+class ConnectionBase{
+public:
+    ConnectionBase(ChannelPtr pc);
+
+    void onRead();
+
+    void onWrite();
+
+private:
+    ChannelPtr     ptrChannel_;
+};
+
+using AcceptCallback = std::function<void(const EndPoint&)>;
+
+class AcceptorBase{
+public:
+    int init();
+
+    void onAccept();
+
+private:
+    ChannelPtr     ptrChannel_;
+    AcceptCallback acceptCallback_;
+};
+
+class Server{
+public:
+
+private:
+
+};
 
 
 }
