@@ -16,6 +16,7 @@
 #include "common/thread_pool.h"
 #include <string>
 #include <iostream>
+#include <map>
 #include <signal.h>
 #include <sys/poll.h>
 #include "coroutine.h"
@@ -180,6 +181,8 @@ private:
     ChannelPtr     ptrChannel_;
 };
 
+using ConnectionPtr  = ConnectionBase*;
+
 using AcceptCallback = std::function<void(const EndPoint&)>;
 
 class AcceptorBase{
@@ -193,11 +196,20 @@ private:
     AcceptCallback acceptCallback_;
 };
 
+using AcceptorPtr = AcceptorBase*;
+
 class Server{
 public:
+    Server(EventLoopPtr ptrEl);
+
+    void waitForShutDown();
+
+    void onAccept(const EndPoint& ep);
 
 private:
-
+    EventLoopPtr  ptrEl_;
+    AcceptorPtr   ptrAcceptor_;
+    std::map<int, ConnectionPtr> mFdConnection_;
 };
 
 
