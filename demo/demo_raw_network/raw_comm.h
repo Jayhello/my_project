@@ -171,13 +171,15 @@ private:
 
 class ConnectionBase{
 public:
-    ConnectionBase(ChannelPtr pc);
+    ConnectionBase(EventLoopPtr ptrEl, const EndPoint& ePoint);
 
     void onRead();
 
     void onWrite();
 
 private:
+    EventLoopPtr   ptrEl_;
+    EndPoint       ePoint_;
     ChannelPtr     ptrChannel_;
 };
 
@@ -187,11 +189,17 @@ using AcceptCallback = std::function<void(const EndPoint&)>;
 
 class AcceptorBase{
 public:
+    AcceptorBase(EventLoopPtr ptrEl);
+
     int init();
 
     void onAccept();
 
+    void setAcceptCallback(AcceptCallback cb);
+
 private:
+    EventLoopPtr   ptrEl_;
+    EndPoint       ePoint_;
     ChannelPtr     ptrChannel_;
     AcceptCallback acceptCallback_;
 };
@@ -200,11 +208,13 @@ using AcceptorPtr = AcceptorBase*;
 
 class Server{
 public:
-    Server(EventLoopPtr ptrEl);
+    Server(EventLoopPtr ptrEl):ptrEl_(ptrEl){}
 
-    void waitForShutDown();
+    int init();
 
-    void onAccept(const EndPoint& ep);
+//    void waitForShutDown();
+
+    void acceptCallback(const EndPoint& ep);
 
 private:
     EventLoopPtr  ptrEl_;
@@ -213,4 +223,4 @@ private:
 };
 
 
-}
+} // raw_comm

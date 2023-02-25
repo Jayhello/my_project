@@ -138,3 +138,72 @@ void setNoBlock(int fd){
 }
 
 } // raw_v1
+
+namespace raw_comm{
+
+ConnectionBase::ConnectionBase(EventLoopPtr ptrEl, const EndPoint& ePoint){
+}
+
+void ConnectionBase::onRead(){
+
+}
+
+void ConnectionBase::onWrite(){
+
+}
+
+AcceptorBase::AcceptorBase(EventLoopPtr ptrEl):ptrEl_(ptrEl){
+}
+
+int AcceptorBase::init(){
+    ePoint_.fd = raw_v1::createTcpServerSocket(LOCAL_IP, PORT);
+    return_ret_if(ePoint_.fd <= 0, -1, "get_server_fd_fail");
+    info("acceptor fd: %d", ePoint_.fd);
+
+    {
+        ptrChannel_ = new ChannelBase(ePoint_, ptrEl_);
+        auto readCb = std::bind(&AcceptorBase::onAccept, this);
+        ptrChannel_->setReadHandle(readCb);
+        ptrChannel_->enableRead(true);
+    }
+
+    return 0;
+}
+
+void AcceptorBase::onAccept(){
+    string cIp;
+    int cPort = 0;
+    int cfd = raw_v1::doAccept(ePoint_.fd, cIp, cPort);
+    return_if(cfd < 0, "accept_fail");
+
+    raw_v1::setNonBlock(cfd);
+    EndPoint ep{cfd, cIp, cPort};
+    acceptCallback_(ep);
+}
+
+void AcceptorBase::setAcceptCallback(AcceptCallback cb){
+    acceptCallback_ = cb;
+}
+
+int Server::init(){
+    int ret = 0;
+    ptrAcceptor_ = new AcceptorBase(ptrEl_);
+    ret = ptrAcceptor_->init();
+    return_ret_if(ret < 0, ret, "acceptor_init_fail");
+
+    {
+        auto cb = std::bind(&Server::acceptCallback, this, std::placeholders::_1);
+        ptrAcceptor_->setAcceptCallback(cb);
+    }
+
+    return 0;
+}
+
+void Server::acceptCallback(const EndPoint& ep){
+    ConnectionPtr pc = new ConnectionBase(ptrEl_, ep);
+    mFdConnection_[ep.fd] = pc;
+}
+
+
+} // raw_comm
+
