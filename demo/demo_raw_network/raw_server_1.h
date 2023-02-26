@@ -523,4 +523,6 @@ public:
 */
 namespace day11{
 
+void example_1();
+
 }

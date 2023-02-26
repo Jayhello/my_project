@@ -90,8 +90,8 @@ int setSocketOpt(int fd, int opt, const void* val, socklen_t opt_len, int level)
 */
 namespace raw_comm{
 
-class EventLoop;
-using EventLoopPtr = EventLoop*;
+class EventLoopBase;
+using EventLoopPtr = EventLoopBase*;
 
 enum kEvents{
     kReadEvent  = POLLIN,        // 0x001
@@ -100,15 +100,27 @@ enum kEvents{
 
 class ChannelBase{
 public:
-    ChannelBase(const EndPoint& ePoint, EventLoopPtr ptrEl): ePoint_(ePoint), ptrEl_(ptrEl){}
+    ChannelBase(const EndPoint& ePoint, EventLoopPtr ptrEl);
 
     const EndPoint& getEndPoint()const{
         return ePoint_;
     }
 
+    int getFd()const{return ePoint_.fd;}
+
     int getEvent()const{
         return events_;
     }
+
+    void enableRead(bool enable);
+    void enableWrite(bool enable);
+
+    bool readEnabled()const;
+    bool writEnabled()const;
+
+    void setActiveEvent(int events){activeEvents_ = events;}
+    bool canRead()const{return activeEvents_ & kReadEvent;}
+    bool canWrite()const{return activeEvents_ & kWriteEvent;}
 
     using ReadHandle  = std::function<void(void)>;
     using WriteHandle = std::function<void(void)>;
@@ -118,17 +130,12 @@ public:
 
     void handleRead(){readHandle_();}
     void handleWrite(){writeHandle_();}
-
-    void enableRead(bool flag);
-    void enableWrite(bool flag);
-
-    bool readEnabled()const;
-    bool writEnabled()const;
 private:
     EndPoint      ePoint_;
     EventLoopPtr  ptrEl_;
 
-    int           events_ = 0;
+    int           events_ = kReadEvent;
+    int           activeEvents_ = 0;
     ReadHandle    readHandle_;
     WriteHandle   writeHandle_;
 };
@@ -164,9 +171,12 @@ public:
 //    void waitForShutDown();
     void loop();
 
+    EpollBasePtr getPollBase(){return ptrPoll_;}
+
 private:
     EpollBasePtr ptrPoll_ = nullptr;
     bool         init_    = false;
+    bool         stop_ = false;
 };
 
 class ConnectionBase{

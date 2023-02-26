@@ -141,11 +141,155 @@ void setNoBlock(int fd){
 
 namespace raw_comm{
 
+ChannelBase::ChannelBase(const EndPoint& ePoint, EventLoopPtr ptrEl): ePoint_(ePoint), ptrEl_(ptrEl){
+    ptrEl_->getPollBase()->addChannel(this);   // 构造的时候加入到epoll
+}
+
+void ChannelBase::enableRead(bool enable){
+    if(enable){
+        events_ |= kReadEvent;
+    }else{
+        events_ &= (~kReadEvent);
+    }
+    ptrEl_->getPollBase()->updateChannel(this);
+}
+
+void ChannelBase::enableWrite(bool enable){
+    if(enable){
+        events_ |= kWriteEvent;
+    }else{
+        events_ &= (~kWriteEvent);
+    }
+    ptrEl_->getPollBase()->updateChannel(this);
+}
+
+bool ChannelBase::readEnabled()const{
+    return events_ | kReadEvent;
+}
+
+bool ChannelBase::writEnabled()const{
+    return events_ | kWriteEvent;
+}
+
+int EpollBase::init(){
+    epfd_ = epoll_create(1);
+    return_ret_if(epfd_ < 0, -1, "epoll_create_fail");
+
+    events_ = new epoll_event[MAX_EVENTS];
+    bzero(events_, sizeof(*events_) * MAX_EVENTS);
+
+    return 0;
+}
+
+void EpollBase::addChannel(ChannelPtr pc){
+    struct epoll_event epev;
+    memset(&epev, 0, sizeof(epev));
+
+    epev.events = pc->getEvent();
+    epev.data.fd = pc->getFd();
+    epev.data.ptr = pc;
+    epoll_ctl(epfd_, EPOLL_CTL_ADD, pc->getFd(), &epev);
+}
+
+void EpollBase::updateChannel(ChannelPtr pc){
+    struct epoll_event epev;
+    memset(&epev, 0, sizeof(epev));
+
+    epev.events = pc->getEvent();
+    epev.data.fd = pc->getFd();
+    epev.data.ptr = pc;
+    epoll_ctl(epfd_, EPOLL_CTL_MOD, pc->getFd(), &epev);
+}
+
+ChannelPtrList EpollBase::pollOnce(int timeoutMs){
+    ChannelPtrList vRes;
+    int num = epoll_wait(epfd_, events_, MAX_EVENTS, timeoutMs);
+    for(int i = 0; i < num; ++i){
+        auto ptr = ChannelPtr(events_[i].data.ptr);
+        ptr->setActiveEvent(events_[i].events);
+        vRes.push_back(ptr);
+    }
+
+    return vRes;
+}
+
+int EventLoopBase::init(){
+    ptrPoll_ = new EpollBase();
+    int ret = ptrPoll_->init();
+    return_ret_if(ret < 0, ret, "poll_init_fail");
+
+    init_ = true;
+
+    return 0;
+}
+
+EventLoopBase::~EventLoopBase(){
+    if(ptrPoll_){
+        delete ptrPoll_;
+        ptrPoll_ = nullptr;
+    }
+}
+
+void EventLoopBase::loop(){
+    while(not stop_){
+        ChannelPtrList vActive = ptrPoll_->pollOnce(1000);
+
+        for(auto pc : vActive){
+            if(pc->canRead()){
+                pc->handleRead();
+            }
+            if(pc->canWrite()){
+                pc->handleWrite();
+            }
+        }
+    }
+}
+
 ConnectionBase::ConnectionBase(EventLoopPtr ptrEl, const EndPoint& ePoint){
+    ptrChannel_ = new ChannelBase(ePoint, ptrEl);   // 构造的时候add到epoll中
+
+    {
+        auto rcb = std::bind(&ConnectionBase::onRead, this);
+        ptrChannel_->setReadHandle(rcb);
+
+        auto wcb = std::bind(&ConnectionBase::onWrite, this);
+        ptrChannel_->setWriteHandle(wcb);
+    }
 }
 
 void ConnectionBase::onRead(){
-
+    int fd = ptrChannel_->getFd();
+    while(true) {  //由于使用非阻塞IO，读取客户端buffer，一次读取buf大小数据，直到全部读取完毕
+        string sData;
+        int iReadSize = raw_v1::doRead(fd, sData, 1024);
+        if (iReadSize > 0) {
+            info("get msg from fd: %d, size: %d, %s", fd, iReadSize, sData.c_str());
+            int iWriteSize = raw_v1::doWrite(fd, sData);  // < 0 简洁点去掉
+            info("echo back size: %d, %s", iWriteSize, sData.c_str());
+        } else if (0 == iReadSize) {  //EOF，客户端断开连接
+            info("fd: %d has close", fd);
+            raw_v1::doClose(fd);
+            //            epoll_ctl(eFd, EPOLL_CTL_DEL, events[i].data.fd, nullptr);
+            break;
+        } else {  // -1
+            int error = errno;
+            if (EAGAIN == error or EWOULDBLOCK == error) {  //非阻塞IO，这个条件表示数据全部读取完毕
+                info("fd: %d no data...., ret: %d error: %d, %s", fd, iReadSize, error, strerror(error));
+                break;
+            } else if (EINTR == error) {  //客户端正常中断、继续读取
+                info("fd: %d continue reading...., ret: %d error: %d, %s", fd, iReadSize, error,
+                     strerror(error));
+                continue;
+            } else {
+                error("fd: %d read fail close it, ret: %d error: %d, %s", fd, iReadSize, error,
+                      strerror(error));
+                raw_v1::doClose(fd);
+//                close_cb_(fd);
+                //                epoll_ctl(eFd, EPOLL_CTL_DEL, fd, nullptr);
+                break;
+            }
+        }
+    }
 }
 
 void ConnectionBase::onWrite(){
@@ -201,6 +345,7 @@ int Server::init(){
 
 void Server::acceptCallback(const EndPoint& ep){
     ConnectionPtr pc = new ConnectionBase(ptrEl_, ep);
+    info("accept new client %s, sub", ep.toString().c_str());
     mFdConnection_[ep.fd] = pc;
 }
 

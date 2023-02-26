@@ -24,7 +24,8 @@ int main(int argc, char** argv){
 //    day07::day07_example();
 //    day08::day08_example();
 
-    day10::example();
+//    day10::example();
+    day11::example_1();
 
     info("exit server1 demo");
     return 0;
@@ -1253,3 +1254,20 @@ void Server::closeCallback(EndPoint ep){
 }
 
 } // day10
+
+namespace day11{
+
+void example_1(){
+    raw_comm::EventLoopBase ep;
+    int ret = ep.init();
+    return_if(ret < 0, "event_loop_init_fail");
+
+    raw_comm::Server svr(&ep);
+    ret = svr.init();
+    return_if(ret < 0, "svr_init_fail");
+
+    info("%s, server init succ, now loop...", __FUNCTION__);
+    ep.loop();
+}
+
+}
