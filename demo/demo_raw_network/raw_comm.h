@@ -179,6 +179,50 @@ private:
     bool         stop_ = false;
 };
 
+class Msg{
+public:
+    Msg() = default;
+
+    Msg(const string& str):data_(str){}
+
+    const string& data()const{return data_;}
+
+    string& data(){return data_;}
+
+    void append(const string& str){data_.append(str);}
+
+    const char* c_str()const{return data.c_str();}
+
+    string data_;
+};
+
+class Buffer{
+    Buffer() = default;
+    Buffer(const string& str):data_(str){}
+
+    const string& data()const{return data_;}
+
+    string& data(){return data_;}
+
+    void append(const string& str){data_.append(str);}
+
+    const char* c_str()const{return data_.c_str();}
+
+    void remove(int pos, int len){data_.erase(pos, len);}
+
+    string data_;
+};
+
+class CodecBase{
+public:
+    virtual  ~CodecBase() = 0;
+
+    virtual void encode(const Msg& msg, Buffer& buf) = 0;
+
+    // < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
+    virtual int tryDecode(const Buffer& buf, Msg& msg) = 0;
+};
+
 class ConnectionBase{
 public:
     ConnectionBase(EventLoopPtr ptrEl, const EndPoint& ePoint);
@@ -187,10 +231,28 @@ public:
 
     void onWrite();
 
+    void handleHandshake();
+
+    enum eConnectState{
+        eInvalid        = 0,
+        eHandshaking    = 1,
+        eConnected      = 2,
+        eClosed         = 3,
+        eFailed         = 4,
+    };
+
+    // 支持下创建链接
+    static ConnectionBase* createConnection(EventLoopPtr ptrEl, string ip, int port);
+
+    void setState(int iState){iState_ = iState;}
+
+    void onState();
+
 private:
     EventLoopPtr   ptrEl_;
     EndPoint       ePoint_;
     ChannelPtr     ptrChannel_;
+    int            iState_;
 };
 
 using ConnectionPtr  = ConnectionBase*;

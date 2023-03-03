@@ -296,6 +296,25 @@ void ConnectionBase::onWrite(){
 
 }
 
+ConnectionBase* ConnectionBase::createConnection(EventLoopPtr ptrEl, string ip, int port){
+    int fd = raw_v1::getTcpSocket();
+    if(fd < 0){
+        error("create socket fail");
+        return nullptr;
+    }
+
+    info("fd: %d", fd);
+
+    raw_v1::setNonBlock(fd);
+    int ret = raw_v1::doConnect(fd, ip, port);
+
+    EndPoint endPoint;
+    endPoint.fd = fd;
+    ConnectionBase* pc = new ConnectionBase(ptrEl, endPoint);
+//    iState_ = eHandshaking;
+
+}
+
 AcceptorBase::AcceptorBase(EventLoopPtr ptrEl):ptrEl_(ptrEl){
 }
 
