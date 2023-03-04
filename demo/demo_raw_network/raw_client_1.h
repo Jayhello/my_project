@@ -29,3 +29,11 @@ namespace v4{
 void echoSelectClient();
 
 } // v4
+
+namespace v5{
+
+// 使用 msg encode之后再发送
+void example_msg_codec();
+
+} // v5
+

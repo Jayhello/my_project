@@ -26,6 +26,7 @@ int main(int argc, char** argv){
 
 //    day10::example();
     day11::example_1();
+//    day11::example_codec_1();
 
     info("exit server1 demo");
     return 0;
@@ -1270,4 +1271,21 @@ void example_1(){
     ep.loop();
 }
 
+
+void example_codec_1(){
+    log_v1::ScopeLog Log;
+
+    raw_comm::Msg    msg1("123456");
+    raw_comm::Buffer bf1;
+
+    raw_comm::LengthCodec cc;
+    cc.encode(msg1, bf1);
+    Log << "bf1_size: " << bf1.size();
+
+    raw_comm::Msg msg2;
+    int ret = cc.tryDecode(bf1, msg2);
+    Log << ", decode_ret: " << ret << ", decode_msg: " << msg2.data();
+
 }
+
+} // day11

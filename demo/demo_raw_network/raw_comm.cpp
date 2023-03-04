@@ -245,7 +245,7 @@ void EventLoopBase::loop(){
     }
 }
 
-ConnectionBase::ConnectionBase(EventLoopPtr ptrEl, const EndPoint& ePoint){
+ConnectionBase::ConnectionBase(EventLoopPtr ptrEl, const EndPoint& ePoint):ptrEl_(ptrEl), ePoint_(ePoint){
     ptrChannel_ = new ChannelBase(ePoint, ptrEl);   // 构造的时候add到epoll中
 
     {
@@ -263,9 +263,14 @@ void ConnectionBase::onRead(){
         string sData;
         int iReadSize = raw_v1::doRead(fd, sData, 1024);
         if (iReadSize > 0) {
-            info("get msg from fd: %d, size: %d, %s", fd, iReadSize, sData.c_str());
-            int iWriteSize = raw_v1::doWrite(fd, sData);  // < 0 简洁点去掉
-            info("echo back size: %d, %s", iWriteSize, sData.c_str());
+            rBuf_.append(sData);
+            Msg msg;
+            int tmp = codec_.tryDecode(rBuf_, msg);
+            info("get msg from fd: %d, size: %d, %s, decode_ret: %d", fd, iReadSize, sData.c_str(), tmp);
+            if(tmp > 0){
+                onMsg(msg);
+                rBuf_.remove(0, tmp);
+            }
         } else if (0 == iReadSize) {  //EOF，客户端断开连接
             info("fd: %d has close", fd);
             raw_v1::doClose(fd);
@@ -284,12 +289,17 @@ void ConnectionBase::onRead(){
                 error("fd: %d read fail close it, ret: %d error: %d, %s", fd, iReadSize, error,
                       strerror(error));
                 raw_v1::doClose(fd);
-//                close_cb_(fd);
-                //                epoll_ctl(eFd, EPOLL_CTL_DEL, fd, nullptr);
                 break;
             }
         }
     }
+}
+
+void ConnectionBase::onMsg(const Msg& msg){
+    info("ep: %s, on_msg: %s", ePoint_.toString().c_str(), msg.c_str());
+
+    int iWriteSize = raw_v1::doWrite(ePoint_.fd, msg.data());  // < 0 简洁点去掉
+    info("echo back size: %d", iWriteSize);
 }
 
 void ConnectionBase::onWrite(){
@@ -366,6 +376,40 @@ void Server::acceptCallback(const EndPoint& ep){
     ConnectionPtr pc = new ConnectionBase(ptrEl_, ep);
     info("accept new client %s, sub", ep.toString().c_str());
     mFdConnection_[ep.fd] = pc;
+}
+
+void LengthCodec::encode(const Msg& msg, Buffer& buf){
+//    buf.resize(sizeof(MAGIC) + msg.size());
+//    memcpy((void*)(&MAGIC), buf.c_str(), sizeof(MAGIC));
+
+//    buf.append((char*)(&CodecBase::MAGIC), sizeof(CodecBase::MAGIC));  // head magic
+    buf.append((char*)(&MAGIC), sizeof(MAGIC));  // head magic
+
+    int len = msg.size();
+    buf.append((char*)(&len), sizeof(len));      // length
+    buf.append(msg.data());                      // data
+}
+
+// < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
+int LengthCodec::tryDecode(const Buffer& buf, Msg& msg){
+    if(buf.size() < 8){
+        return 0;
+    }
+
+//    if(0 != memcmp(buf.c_str(), (char*)(&CodecBase::MAGIC), sizeof(CodecBase::MAGIC))){
+    if(0 != memcmp(buf.c_str(), (char*)(&MAGIC), sizeof(MAGIC))){
+        return -1;
+    }
+
+    int len = *((int*)(buf.c_str() + 4));
+    if(len > 10 * 1024 * 124)return -2;
+
+    if(buf.size() >= len + 8){
+        msg.append(buf.c_str() + 8, len);
+        return len + 8;
+    }
+
+    return 0;
 }
 
 

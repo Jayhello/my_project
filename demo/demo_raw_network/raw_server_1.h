@@ -525,4 +525,6 @@ namespace day11{
 
 void example_1();
 
+void example_codec_1();
+
 }

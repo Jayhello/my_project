@@ -11,8 +11,10 @@ int main(int argc, char** argv){
 
 //    v1::echoClient();
 //    v2::echoClient();
-    v3::echoClient();
+//    v3::echoClient();
 //    v4::echoSelectClient();
+
+    v5::example_msg_codec();
 
     info("exit client1 demo");
     return 0;
@@ -240,3 +242,51 @@ void echoSelectClient(){
 }
 
 } // v4
+
+namespace v5{
+
+// 使用 msg encode之后再发送
+void example_msg_codec(){
+    log_v1::ScopeLog Log;
+
+    int fd = raw_v1::getTcpSocket();
+    return_if(fd <= 0, "get_socket_fd_fail");
+    Log << "fd: " << fd;
+
+    int ret = raw_v1::doConnect(fd, LOCAL_IP, PORT);
+    //    return_if(ret < 0, "connect_fail ret: %d, %s", ret, strerror(ret));
+    return_if(ret < 0, "connect_fail ret: %d, %s", ret, strerror(errno));
+    Log << " connect_succ";
+
+    raw_comm::Msg msg("123456");
+    raw_comm::Buffer buf;
+
+    raw_comm::LengthCodec cc;
+    cc.encode(msg, buf);
+    Log << ", bf1_size: " << buf.size();
+
+    while(buf.size()){
+        int len = std::min(3, buf.size());
+        Log << ", send_len: " << len;
+        string tmp = buf.data().substr(0, len);
+
+        ret = raw_v1::doSend(fd, tmp);
+        Log <<" ret: " << ret;
+        if(ret > 0){
+            buf.remove(0, len);
+            Log << " remove_left: " << buf.size();
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(1));   // 模拟拆包(一个包多次发完)
+    }
+
+    string sData;
+    int iReadSize = raw_v1::doRecv(fd, sData, 1024);
+    Log << ", read_size: " << iReadSize << " msg: " << sData;
+
+    raw_v1::doClose(fd);
+    Log << " close_exit";
+}
+
+};
+

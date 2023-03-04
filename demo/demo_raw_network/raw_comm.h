@@ -189,38 +189,67 @@ public:
 
     string& data(){return data_;}
 
+    int size()const{return data_.size();}
+
     void append(const string& str){data_.append(str);}
 
-    const char* c_str()const{return data.c_str();}
+    void append(const char* str, int len){
+        data_.append(str, len);
+    }
 
+    const char* c_str()const{return data_.c_str();}
+private:
     string data_;
 };
 
 class Buffer{
+public:
     Buffer() = default;
     Buffer(const string& str):data_(str){}
+
+    int size()const{return data_.size();}
 
     const string& data()const{return data_;}
 
     string& data(){return data_;}
+
+    void reserve(int size){data_.reserve(size);}
+
+    void resize(int size){data_.resize(size);}
+
+    void append(const char* str, int len){
+        data_.append(str, len);
+    }
 
     void append(const string& str){data_.append(str);}
 
     const char* c_str()const{return data_.c_str();}
 
     void remove(int pos, int len){data_.erase(pos, len);}
-
+private:
     string data_;
 };
 
+const uint32_t MAGIC = 0x1234;
+
 class CodecBase{
 public:
-    virtual  ~CodecBase() = 0;
+//    static const uint32_t MAGIC = 0x1234;
+
+    virtual  ~CodecBase(){};
 
     virtual void encode(const Msg& msg, Buffer& buf) = 0;
 
     // < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
     virtual int tryDecode(const Buffer& buf, Msg& msg) = 0;
+};
+
+class LengthCodec: public CodecBase{
+public:
+    virtual void encode(const Msg& msg, Buffer& buf);
+
+    // < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
+    virtual int tryDecode(const Buffer& buf, Msg& msg);
 };
 
 class ConnectionBase{
@@ -248,11 +277,16 @@ public:
 
     void onState();
 
+    void onMsg(const Msg& msg);   // 收到一条完整的包(这里简单的回包echo回去)
+
 private:
     EventLoopPtr   ptrEl_;
     EndPoint       ePoint_;
     ChannelPtr     ptrChannel_;
     int            iState_;
+
+    Buffer         rBuf_;       // 读 buffer
+    LengthCodec    codec_;
 };
 
 using ConnectionPtr  = ConnectionBase*;
