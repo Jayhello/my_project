@@ -25,8 +25,9 @@ int main(int argc, char** argv){
 //    day08::day08_example();
 
 //    day10::example();
-    day11::example_1();
+//    day11::example_1();
 //    day11::example_codec_1();
+    day11::example_string_slice();
 
     info("exit server1 demo");
     return 0;
@@ -1285,6 +1286,23 @@ void example_codec_1(){
     raw_comm::Msg msg2;
     int ret = cc.tryDecode(bf1, msg2);
     Log << ", decode_ret: " << ret << ", decode_msg: " << msg2.data();
+
+}
+
+void example_string_slice(){
+    {
+        raw_comm::StringSlice ss("abc");
+        std::cout << ss << endl;
+    }
+
+    {
+        string str = "def";
+        raw_comm::StringSlice ss(str);
+        std::cout << ss << endl;
+
+        auto ss2 = ss;
+        std::cout << "copy_ss: " <<  ss2 << endl;
+    }
 
 }
 

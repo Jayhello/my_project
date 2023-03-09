@@ -179,6 +179,33 @@ private:
     bool         stop_ = false;
 };
 
+class StringSlice{
+public:
+    StringSlice(const char* p, int len):pb_(p), pe_(p + len){}
+
+    StringSlice(const string& str):pb_(str.data()), pe_(pb_ + str.size()){}
+
+    StringSlice():pb_(nullptr), pe_(nullptr){}
+
+    StringSlice(const StringSlice& ss):pb_(ss.pb_), pe_(ss.pe_){}
+
+    StringSlice& operator=(const StringSlice& ss){
+        pb_ = ss.pb_;
+        pe_ = ss.pe_;
+    }
+
+    string toString(){return string(pb_, pe_);}
+
+    const char* str()const{return pb_;}
+
+    int size()const{return pb_ - pe_;}
+
+    friend std::ostream& operator<<(std::ostream& os, const StringSlice& ss);
+
+    const char* pb_;
+    const char* pe_;
+};
+
 class Msg{
 public:
     Msg() = default;
@@ -239,6 +266,9 @@ public:
     virtual  ~CodecBase(){};
 
     virtual void encode(const Msg& msg, Buffer& buf) = 0;
+
+    // 新增用slice高效点
+    virtual void encode(StringSlice , Buffer& buf) = 0;
 
     // < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
     virtual int tryDecode(const Buffer& buf, Msg& msg) = 0;

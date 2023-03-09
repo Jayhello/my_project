@@ -412,6 +412,9 @@ int LengthCodec::tryDecode(const Buffer& buf, Msg& msg){
     return 0;
 }
 
+std::ostream& operator<<(std::ostream& os, const StringSlice& ss){
+    return os << ss.str();
+}
 
 } // raw_comm
 
