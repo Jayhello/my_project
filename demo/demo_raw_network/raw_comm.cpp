@@ -390,6 +390,13 @@ void LengthCodec::encode(const Msg& msg, Buffer& buf){
     buf.append(msg.data());                      // data
 }
 
+void LengthCodec::encode(StringSlice ss, Buffer& buf){
+    buf.append((char*)(&MAGIC), sizeof(MAGIC));
+    int len = ss.size();
+    buf.append((char*)(&len), sizeof(len));
+    buf.append(ss.str(), len);
+}
+
 // < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
 int LengthCodec::tryDecode(const Buffer& buf, Msg& msg){
     if(buf.size() < 8){
@@ -410,6 +417,11 @@ int LengthCodec::tryDecode(const Buffer& buf, Msg& msg){
     }
 
     return 0;
+}
+
+//https://github.com/JamesBlandford/muk
+int LengthCodec::tryDecode(StringSlice src, StringSlice& dst){
+
 }
 
 std::ostream& operator<<(std::ostream& os, const StringSlice& ss){

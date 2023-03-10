@@ -267,11 +267,17 @@ public:
 
     virtual void encode(const Msg& msg, Buffer& buf) = 0;
 
-    // 新增用slice高效点
-    virtual void encode(StringSlice , Buffer& buf) = 0;
-
     // < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
     virtual int tryDecode(const Buffer& buf, Msg& msg) = 0;
+
+    // 使用 slice 高效
+    virtual void encode(StringSlice ss, Buffer& buf) = 0;
+
+    // dst 就是截取 buf 一部分
+    virtual int tryDecode(const Buffer&buf, StringSlice& dst) = 0;
+
+    // decode其实就是将源字符串做截取, 这里用slice做源参数其实更通用
+    virtual int tryDecode(StringSlice src, StringSlice& dst) = 0;
 };
 
 class LengthCodec: public CodecBase{
@@ -280,6 +286,11 @@ public:
 
     // < 0 buf数据异常, = 0 数据不完整, > 0 解析出了一个多大的msg包
     virtual int tryDecode(const Buffer& buf, Msg& msg);
+
+    // 使用 slice 高效
+    virtual void encode(StringSlice ss, Buffer& buf);
+
+    virtual int tryDecode(StringSlice src, StringSlice& dst)override;
 };
 
 class ConnectionBase{
