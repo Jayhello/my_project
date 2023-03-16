@@ -419,6 +419,8 @@ int LengthCodec::tryDecode(const Buffer& buf, Msg& msg){
     return 0;
 }
 
+//https://github.com/wangbojing/NtyCo
+//https://github.com/sylar-yin/sylar
 //https://github.com/JamesBlandford/muk
 int LengthCodec::tryDecode(StringSlice src, StringSlice& dst){
 
