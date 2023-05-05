@@ -29,6 +29,12 @@ using log_v1::ScopeLog;
 
 namespace hd{
 
+class EventLoop{
+public:
+
+};
+
+
 struct TimerTask{
     enum eTaskType{
         ONCE = 0,
