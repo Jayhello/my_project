@@ -274,7 +274,7 @@ public:
     virtual void encode(StringSlice ss, Buffer& buf) = 0;
 
     // dst 就是截取 buf 一部分
-    virtual int tryDecode(const Buffer&buf, StringSlice& dst) = 0;
+//    virtual int tryDecode(const Buffer&buf, StringSlice& dst) = 0;
 
     // decode其实就是将源字符串做截取, 这里用slice做源参数其实更通用
     virtual int tryDecode(StringSlice src, StringSlice& dst) = 0;
