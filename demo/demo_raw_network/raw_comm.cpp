@@ -423,7 +423,7 @@ int LengthCodec::tryDecode(const Buffer& buf, Msg& msg){
 //https://github.com/sylar-yin/sylar
 //https://github.com/JamesBlandford/muk
 int LengthCodec::tryDecode(StringSlice src, StringSlice& dst){
-
+    return 0;
 }
 
 std::ostream& operator<<(std::ostream& os, const StringSlice& ss){
