@@ -4,12 +4,36 @@
 
 #pragma once
 #include "common/noncopyable.h"
+#include <functional>
 
 namespace hd{
 
+class EventLoop;
+
 class Channel{
 public:
+    using EventCallback = std::function<void()>;
 
+    Channel(int fd, EventLoop* loop);
+
+    ~Channel();
+
+    int fd()const{return fd_;}
+
+    void enableRead();
+    void enableWrite();
+
+    void update();
+
+private:
+    int           fd_;
+    EventLoop*    loop_;
+    int           events_;
+    int           revents_;
+    bool          addedToLoop_;
+
+    EventCallback readCallback_;
+    EventCallback writeCallback_;
 };
 
 } // hd
