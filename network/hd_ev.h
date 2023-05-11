@@ -29,9 +29,27 @@ using log_v1::ScopeLog;
 
 namespace hd{
 
+class PollerBase;
+using PollerPtr = PollerBase*;
+
+class Channel;
+using ChannelPtr = Channel*;
+
 class EventLoop{
 public:
+    EventLoop();
 
+    ~EventLoop();
+
+    void loop();
+
+    void updateChannel(ChannelPtr);
+
+    void stop(){stop_ = true;}
+
+private:
+    PollerPtr   poll_;
+    bool        stop_;
 };
 
 

@@ -4,15 +4,18 @@
 
 #pragma once
 #include "common/noncopyable.h"
+#include <vector>
 
 namespace hd{
 
 class Channel;
-
 using ChannelPtr = Channel*;
+using ChannelPtrList = std::vector<ChannelPtr>;
 
 struct PollerBase : public comm::noncopyable{
     virtual ~PollerBase() = 0;
+
+    virtual void loopOnce(int iWaitMs, ChannelPtrList& vActiveList) = 0;
 
     virtual void addChannel(ChannelPtr) = 0;
     virtual void removeChannel(ChannelPtr) = 0;

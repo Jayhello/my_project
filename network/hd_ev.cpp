@@ -3,8 +3,27 @@
 //
 
 #include "hd_ev.h"
+#include "hd_poll.h"
 
 namespace hd{
+
+EventLoop::EventLoop():poll_(createPoller()), stop_(false){
+}
+
+EventLoop::~EventLoop(){
+}
+
+void EventLoop::loop(){
+    while(not stop_){
+        ChannelPtrList vActiveList;
+        poll_->loopOnce(1000, vActiveList);
+
+    }
+}
+
+void EventLoop::updateChannel(ChannelPtr){
+
+}
 
 int EpollTimer::init(){
     iAutoId_ = 0;

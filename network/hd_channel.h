@@ -10,6 +10,10 @@ namespace hd{
 
 class EventLoop;
 
+const int kMaxEvents = 2000;
+const int kReadEvent = POLLIN;
+const int kWriteEvent = POLLOUT;
+
 class Channel{
 public:
     using EventCallback = std::function<void()>;
@@ -21,9 +25,12 @@ public:
     int fd()const{return fd_;}
 
     void enableRead();
+
     void enableWrite();
 
-    void update();
+    void handleRead(){readCallback_();}
+
+    void handleWrite(){writeCallback_();}
 
 private:
     int           fd_;
