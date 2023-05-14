@@ -5,6 +5,7 @@
 #pragma once
 #include "common/noncopyable.h"
 #include <functional>
+#include <poll.h>
 
 namespace hd{
 
