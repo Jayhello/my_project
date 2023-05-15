@@ -11,7 +11,6 @@ namespace hd{
 
 class EventLoop;
 
-const int kMaxEvents = 2000;
 const int kReadEvent = POLLIN;
 const int kWriteEvent = POLLOUT;
 
@@ -24,6 +23,8 @@ public:
     ~Channel();
 
     int fd()const{return fd_;}
+
+    int events()const{return events_;}
 
     void enableRead();
 
