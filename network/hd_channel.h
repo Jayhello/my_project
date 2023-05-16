@@ -26,6 +26,10 @@ public:
 
     int events()const{return events_;}
 
+    int revents()const{return revents_;}
+
+    void setRevents(int revents){revents_ = revents;}
+
     void enableRead();
 
     void enableWrite();
@@ -34,6 +38,7 @@ public:
 
     void handleWrite(){writeCallback_();}
 
+    void update();
 private:
     int           fd_;
     EventLoop*    loop_;

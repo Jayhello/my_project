@@ -8,6 +8,7 @@
 #include "hd_poll.h"
 #include "common/logging.h"
 #include "hd_channel.h"
+#include "common/commmon.h"
 
 namespace hd{
 
@@ -46,11 +47,17 @@ PollerEpoll::~PollerEpoll(){
 }
 
 void PollerEpoll::loopOnce(int iWaitMs, ChannelPtrList& vActiveList){
+    int64_t start = NOW_MS;
     int num = epoll_wait(epfd_, events_, kMaxEvents, iWaitMs);
+    int64_t ticks = NOW_MS - start;
+
     fatalif(num < 0, "epoll_wait fail %d %s", errno, strerror(errno));
+    trace("epoll_wait return nums: %d, used: %ld", num, ticks);
 
     for (int i = 0; i < num; ++i) {
-
+        auto ptr = ChannelPtr(events_[i].data.ptr);
+        ptr->setRevents(events_[i].events);
+        vActiveList.push_back(ptr);
     }
 }
 
