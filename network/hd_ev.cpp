@@ -3,7 +3,6 @@
 //
 
 #include "hd_ev.h"
-#include "hd_poll.h"
 
 namespace hd{
 
@@ -18,11 +17,16 @@ void EventLoop::loop(){
         ChannelPtrList vActiveList;
         poll_->loopOnce(1000, vActiveList);
 
+        for(auto ptr : vActiveList){
+            if(ptr->revents() & kReadEvent){
+                ptr->handleRead();
+            }
+
+            if(ptr->revents() & kWriteEvent){
+                ptr->handleWrite();
+            }
+        }
     }
-}
-
-void EventLoop::updateChannel(ChannelPtr){
-
 }
 
 int EpollTimer::init(){

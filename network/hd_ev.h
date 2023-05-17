@@ -18,6 +18,8 @@
 #include <atomic>
 #include "common/logging.h"
 #include "common/commmon.h"
+#include "hd_poll.h"
+#include "hd_channel.h"
 
 using std::string;
 using std::cout;
@@ -29,12 +31,6 @@ using log_v1::ScopeLog;
 
 namespace hd{
 
-class PollerBase;
-using PollerPtr = PollerBase*;
-
-class Channel;
-using ChannelPtr = Channel*;
-
 class EventLoop{
 public:
     EventLoop();
@@ -43,9 +39,10 @@ public:
 
     void loop();
 
-    void updateChannel(ChannelPtr);
-
     void stop(){stop_ = true;}
+
+protected:
+    PollerPtr   getPoller(){return poll_;}
 
 private:
     PollerPtr   poll_;

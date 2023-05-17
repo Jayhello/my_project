@@ -5,11 +5,10 @@
 #pragma once
 #include "common/noncopyable.h"
 #include <vector>
+#include "hd_channel.h"
 
 namespace hd{
 
-class Channel;
-using ChannelPtr = Channel*;
 using ChannelPtrList = std::vector<ChannelPtr>;
 
 struct PollerBase : public comm::noncopyable{

@@ -32,13 +32,19 @@ public:
 
     void enableRead();
 
+    void disableRead();
+
     void enableWrite();
+
+    void disableWrite();
 
     void handleRead(){readCallback_();}
 
     void handleWrite(){writeCallback_();}
 
-    void update();
+private:
+    void updateEvent();
+
 private:
     int           fd_;
     EventLoop*    loop_;
@@ -49,5 +55,7 @@ private:
     EventCallback readCallback_;
     EventCallback writeCallback_;
 };
+
+using ChannelPtr = Channel*;
 
 } // hd

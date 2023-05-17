@@ -68,7 +68,7 @@ void PollerEpoll::addChannel(ChannelPtr ptr){
     epev.data.fd = ptr->fd();
     epev.data.ptr = ptr;
     int ret = epoll_ctl(epfd_, EPOLL_CTL_ADD, ptr->fd(), &epev);
-    trace("add channel fd: %d, epfd: %d, add_ret", ptr->fd(), epfd_, ret);
+    trace("add channel fd: %d, epfd: %d, add_ret: %d", ptr->fd(), epfd_, ret);
     fatalif(ret < 0, "add channel fd: %d, epfd: %d, epctl_fail: %d, %s", ptr->fd(), epfd_, errno, strerror(errno));
 }
 
@@ -79,7 +79,7 @@ void PollerEpoll::removeChannel(ChannelPtr ptr){
     epev.data.fd = ptr->fd();
     epev.data.ptr = ptr;
     int ret = epoll_ctl(epfd_, EPOLL_CTL_DEL, ptr->fd(), &epev);
-    trace("del channel fd: %d, epfd: %d, add_ret", ptr->fd(), epfd_, ret);
+    trace("del channel fd: %d, epfd: %d, add_ret: %d", ptr->fd(), epfd_, ret);
     fatalif(ret < 0, "del channel fd: %d, epfd: %d, epctl_fail: %d, %s", ptr->fd(), epfd_, errno, strerror(errno));
 }
 
@@ -90,7 +90,7 @@ void PollerEpoll::updateChannel(ChannelPtr ptr){
     epev.data.fd = ptr->fd();
     epev.data.ptr = ptr;
     int ret = epoll_ctl(epfd_, EPOLL_CTL_MOD, ptr->fd(), &epev);
-    trace("update channel fd: %d, epfd: %d, add_ret", ptr->fd(), epfd_, ret);
+    trace("update channel fd: %d, epfd: %d, add_ret: %d", ptr->fd(), epfd_, ret);
     fatalif(ret < 0, "update channel fd: %d, epfd: %d, epctl_fail: %d, %s", ptr->fd(), epfd_, errno, strerror(errno));
 }
 

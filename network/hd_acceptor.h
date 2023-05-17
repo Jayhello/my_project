@@ -4,11 +4,16 @@
 
 #pragma once
 #include "common/noncopyable.h"
+#include "hd_channel.h"
 
 namespace hd{
 
 class Acceptor{
 public:
+    Acceptor();
+
+private:
+    ChannelPtr channel_;
 
 };
 
