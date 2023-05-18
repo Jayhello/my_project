@@ -5,16 +5,28 @@
 #pragma once
 #include "common/noncopyable.h"
 #include "hd_channel.h"
+#include "hd_endpoint.h"
 
 namespace hd{
 
+using AcceptCallback = std::function<void()>;
+
 class Acceptor{
 public:
-    Acceptor();
+    Acceptor(int port);
+
+    void setAcceptCallback(AcceptCallback&& cb){
+        acceptCallback_ = std::move(cb);
+    }
 
 private:
+    void handleAccept();
+
+private:
+    EndPoint   ePoint;
     ChannelPtr channel_;
 
+    AcceptCallback acceptCallback_;
 };
 
 } // hd
