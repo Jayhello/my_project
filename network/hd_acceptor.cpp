@@ -7,8 +7,9 @@
 
 namespace hd{
 
-Acceptor::Acceptor(int port){
+Acceptor::Acceptor(EventLoop* ep, int port):loop_(ep){
     int fd = createTcpServerSocket("", port);
+    acceptChannel_ = new Channel(fd, loop_);
 
 }
 

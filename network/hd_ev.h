@@ -41,7 +41,6 @@ public:
 
     void stop(){stop_ = true;}
 
-protected:
     PollerPtr   getPoller(){return poll_;}
 
 private:

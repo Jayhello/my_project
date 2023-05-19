@@ -9,11 +9,13 @@
 
 namespace hd{
 
+class EventLoop;
+
 using AcceptCallback = std::function<void()>;
 
 class Acceptor{
 public:
-    Acceptor(int port);
+    Acceptor(EventLoop*, int port);
 
     void setAcceptCallback(AcceptCallback&& cb){
         acceptCallback_ = std::move(cb);
@@ -23,8 +25,9 @@ private:
     void handleAccept();
 
 private:
+    EventLoop* loop_;
+    ChannelPtr acceptChannel_;
     EndPoint   ePoint;
-    ChannelPtr channel_;
 
     AcceptCallback acceptCallback_;
 };

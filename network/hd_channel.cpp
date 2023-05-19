@@ -7,7 +7,7 @@
 
 namespace hd{
 
-Channel::Channel(int fd, EventLoop* loop):fd_(fd), loop_(loop), events_(0), revents(0), addedToLoop_(0){
+Channel::Channel(int fd, EventLoop* loop):fd_(fd), loop_(loop), events_(0), revents_(0), addedToLoop_(0){
     loop_->getPoller()->addChannel(this);
 }
 
