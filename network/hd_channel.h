@@ -38,6 +38,10 @@ public:
 
     void disableWrite();
 
+    void setReadCallback(const EventCallback& cb){readCallback_ = cb;}
+
+    void setWriteCallback(const EventCallback& cb){writeCallback_ = cb;}
+
     void handleRead(){readCallback_();}
 
     void handleWrite(){writeCallback_();}
